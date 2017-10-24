@@ -1,4 +1,4 @@
-package exchange.g0;
+package exchange.g1;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,27 +28,7 @@ public class Player extends exchange.sim.Player {
 
     @Override
     public Offer makeOffer(List<Request> lastRequests, List<Transaction> lastTransactions) {
-        /*
-			lastRequests.get(i)		-		Player i's request last round
-			lastTransactions		-		All completed transactions last round.
-		 */
-        int test = random.nextInt(3);
-        if (test == 0) {
-            // In Offer object, null means no sock is offered
-            return new Offer(null, null);
-        } else if (test == 1) {
-            // Making random offer
-            id1 = random.nextInt(socks.length);
-            return new Offer(socks[id1], null);
-        } else if (test == 2) {
-            // Making random offer
-            id1 = random.nextInt(socks.length);
-            id2 = random.nextInt(socks.length);
-            while (id1 == id2)
-                id2 = random.nextInt(socks.length);
-            return new Offer(socks[id1], socks[id2]);
-        }
-        return null;
+        return this.isolatedSocks();
     }
 
     @Override
@@ -119,5 +99,29 @@ public class Player extends exchange.sim.Player {
     @Override
     public List<Sock> getSocks() {
         return Arrays.asList(socks);
+    }
+    
+    // Finds the two socks whose nearest neighbor is the furthest
+    public Offer isolatedSocks() {
+        int firstLongest = 0;
+        Sock firstSock = null;
+        int secondLongest = 0;
+        Sock secondSock = null;
+        for (int i = 0; i < socks.length; i++) {
+            double shortest = 500.0; // longest possible dist ~442
+            for (int j = i + 1; j < socks.length; j++) {
+                double dist = socks[i].distance(socks[j]);
+                if (dist < shortest) {
+                    shortest = dist;
+                }
+            }
+            if (shortest >= firstLongest) {
+                secondLongest = firstLongest;
+                secondSock = firstSock;
+                firstLongest = shortest;
+                firstSock = socks[i];
+            }
+        }
+        return new Offer(firstSock, secondSock);
     }
 }
