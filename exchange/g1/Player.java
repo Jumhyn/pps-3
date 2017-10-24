@@ -9,6 +9,8 @@ import exchange.sim.Request;
 import exchange.sim.Sock;
 import exchange.sim.Transaction;
 
+import exchange.g1.Blossom;
+
 public class Player extends exchange.sim.Player {
     /*
         Inherited from exchange.sim.Player:
@@ -17,12 +19,13 @@ public class Player extends exchange.sim.Player {
         Remark: you have to manually adjust the order of socks, to minimize the total embarrassment
                 the score is calculated based on your returned list of getSocks(). Simulator will pair up socks 0-1, 2-3, 4-5, etc.
      */
-    private int myFirstOffer, mySecondOffer, id;
+    private int myFirstOffer, mySecondOffer, id, n;
     private Sock[] socks;
 
     @Override
     public void init(int id, int n, int p, int t, List<Sock> socks) {
         this.id = id;
+        this.n = n;
         this.socks = (Sock[]) socks.toArray(new Sock[2 * n]);
         this.myFirstOffer = 0;
         this.mySecondOffer = 0;
@@ -100,7 +103,26 @@ public class Player extends exchange.sim.Player {
 
     @Override
     public List<Sock> getSocks() {
-        return Arrays.asList(socks);
+        int[] match = new Blossom(getCostMatrix(), true).maxWeightMatching();
+        List<Sock> result = new ArrayList<Sock>();
+        for (int i=0; i<match.length; i++) {
+            if (match[i] < i) continue;
+            result.add(socks[i]);
+            result.add(socks[match[i]]);
+        }
+        return result;
+    }
+
+    private float[][] getCostMatrix() {
+        float[][] matrix = new float[2*n*(2*n-1)/2][3];
+        int idx = 0;
+        for (int i = 0; i < socks.length; i++) {
+            for (int j=i+1; j< socks.length; j++) {
+                matrix[idx] = new float[]{i, j, (float)(-socks[i].distance(socks[j]))};
+                idx ++;
+            }
+        }
+        return matrix;
     }
     
     // Finds the two socks whose nearest neighbor is the furthest
