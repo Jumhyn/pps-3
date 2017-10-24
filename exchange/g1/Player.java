@@ -17,13 +17,15 @@ public class Player extends exchange.sim.Player {
         Remark: you have to manually adjust the order of socks, to minimize the total embarrassment
                 the score is calculated based on your returned list of getSocks(). Simulator will pair up socks 0-1, 2-3, 4-5, etc.
      */
-    private int id1, id2, id;
+    private int myFirstOffer, mySecondOffer, id;
     private Sock[] socks;
 
     @Override
     public void init(int id, int n, int p, int t, List<Sock> socks) {
         this.id = id;
         this.socks = (Sock[]) socks.toArray(new Sock[2 * n]);
+        this.myFirstOffer = 0;
+        this.mySecondOffer = 0;
     }
 
     @Override
@@ -92,8 +94,8 @@ public class Player extends exchange.sim.Player {
             rank = transaction.getSecondRank();
             newSock = transaction.getFirstSock();
         }
-        if (rank == 1) socks[id1] = newSock;
-        else socks[id2] = newSock;
+        if (rank == 1) socks[myFirstOffer] = newSock;
+        else socks[mySecondOffer] = newSock;
     }
 
     @Override
@@ -103,10 +105,8 @@ public class Player extends exchange.sim.Player {
     
     // Finds the two socks whose nearest neighbor is the furthest
     public Offer isolatedSocks() {
-        int firstLongest = 0;
-        Sock firstSock = null;
-        int secondLongest = 0;
-        Sock secondSock = null;
+        double firstLongest = 0;
+        double secondLongest = 0;
         for (int i = 0; i < socks.length; i++) {
             double shortest = 500.0; // longest possible dist ~442
             for (int j = i + 1; j < socks.length; j++) {
@@ -117,11 +117,11 @@ public class Player extends exchange.sim.Player {
             }
             if (shortest >= firstLongest) {
                 secondLongest = firstLongest;
-                secondSock = firstSock;
+                mySecondOffer = myFirstOffer;
                 firstLongest = shortest;
-                firstSock = socks[i];
+                myFirstOffer = i;
             }
         }
-        return new Offer(firstSock, secondSock);
+        return new Offer(socks[myFirstOffer], socks[mySecondOffer]);
     }
 }
