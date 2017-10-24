@@ -108,20 +108,28 @@ public class Player extends exchange.sim.Player {
         int secondLongest = 0;
         Sock secondSock = null;
         for (int i = 0; i < socks.length; i++) {
-            double shortest = 500.0; // longest possible dist ~442
-            for (int j = i + 1; j < socks.length; j++) {
-                double dist = socks[i].distance(socks[j]);
-                if (dist < shortest) {
-                    shortest = dist;
-                }
-            }
-            if (shortest >= firstLongest) {
+            double nnDist = this.distToNearestNeighbor(socks[i]); // longest possible dist ~442
+            if (nnDist >= firstLongest) {
                 secondLongest = firstLongest;
                 secondSock = firstSock;
-                firstLongest = shortest;
+                firstLongest = nnDist;
                 firstSock = socks[i];
             }
         }
         return new Offer(firstSock, secondSock);
+    }
+    
+    public double distToNearestNeighbor(Sock s) {
+        double shortest = 500.0; // longest possible dist ~442
+        for (int j = 0; j < socks.length; j++) {
+            if (socks[j] == s) {
+                continue;
+            }
+            double dist = s.distance(socks[j]);
+            if (dist < shortest) {
+                shortest = dist;
+            }
+        }
+        return shortest;
     }
 }
