@@ -80,6 +80,7 @@ public class Simulator {
                     throw new Exception(playerNames.get(i) + "(" + i + ") making invalid offer " + offers[i]);
                 if (offers[i].getSecond() != null && !players[i].owned(offers[i].getSecond()))
                     throw new Exception(playerNames.get(i) + "(" + i + ") making invalid offer " + offers[i]);
+
                 System.out.println(playerNames.get(i) + "(" + i + ") making offer " + offers[i]);
             }
             if (gui) {
@@ -166,7 +167,7 @@ public class Simulator {
         return true;
     }
 
-    private static String state(double fps, int turn, Offer[] offers, Request[] requests, List<Transaction> transactions) {
+    private static String state(double fps, int turn, Offer[] offers, Request[] requests, List<Transaction> transactions) throws Exception {
         // TODO
         DecimalFormat df = new DecimalFormat("#.00");
         double refresh = 1000.0 / fps;
