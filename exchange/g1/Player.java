@@ -23,6 +23,22 @@ public class Player extends exchange.sim.Player {
     private int myFirstRequest, mySecondRequest, rankFirstRequest, rankSecondRequest;
 
     private Sock[] socks;
+    
+    public class Pair {
+        public Sock first;
+        public Sock second;
+        
+        public Pair(Sock fst, Sock snd) {
+            this.first = fst;
+            this.second = snd;
+        }
+    }
+    
+    public ArrayList<Pair> settledPairs;
+    public ArrayList<Pair> pendingPairs;
+    
+    public void repair() {}
+    public void adjustThreshold() {}
 
     @Override
     public void init(int id, int n, int p, int t, List<Sock> socks) {
