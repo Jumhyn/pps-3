@@ -3,6 +3,9 @@ package exchange.g1;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Collections;
+import java.util.Comparator;
 
 import exchange.sim.Offer;
 import exchange.sim.Request;
@@ -19,7 +22,10 @@ public class Player extends exchange.sim.Player {
         Remark: you have to manually adjust the order of socks, to minimize the total embarrassment
                 the score is calculated based on your returned list of getSocks(). Simulator will pair up socks 0-1, 2-3, 4-5, etc.
      */
-    private int myFirstOffer, mySecondOffer, id, n;
+    public final boolean USE_ABS_THRESHOLD = true;
+    public final double ABS_THRESHOLD_FRAC = 0.8;
+    
+    private int myFirstOffer, mySecondOffer, id, n, t;
     private int myFirstRequest, mySecondRequest, rankFirstRequest, rankSecondRequest;
 
     private Sock[] socks;
@@ -34,21 +40,83 @@ public class Player extends exchange.sim.Player {
         }
     }
     
+    public double threshold;
+    
     public ArrayList<Pair> settledPairs;
     public ArrayList<Pair> pendingPairs;
+    public HashMap<Sock, Pair> pairsBySock;
     
-    public void repair() {}
-    public void adjustThreshold() {}
+    public void repair() {
+        pairsBySock = new HashMap<>();
+        Sock[] socks = this.getSockArray();
+        int[] match = new Blossom(getCostMatrix(socks), true).maxWeightMatching();
+        ArrayList<Pair> result = new ArrayList<Pair>();
+        for (int i = 0; i < match.length; i++) {
+            if (match[i] < i) continue;
+            Pair p =  new Pair(socks[i], socks[match[i]]);
+            result.add(p);
+            pairsBySock.put(socks[i], p);
+            pairsBySock.put(socks[match[i]], p);
+        }
+        this.settledPairs = result;
+        this.pendingPairs.clear();
+    }
+    
+    private void adjustThreshold() {
+        this.chooseNewThreshold();
+        for (Pair p : this.settledPairs) {
+            if (p.first.distance(p.second) >= threshold) {
+                this.pendingPairs.add(p);
+            } else if (!USE_ABS_THRESHOLD) {
+                break;
+            }
+        }
+        this.settledPairs.removeAll(this.pendingPairs);
+    }
+    
+    private void chooseNewThreshold() {
+        if (USE_ABS_THRESHOLD) {
+            this.threshold = this.threshold * ABS_THRESHOLD_FRAC;
+        } else {
+            Comparator<Pair> comp = (Pair a, Pair b) -> {
+                return (new Double(b.first.distance(b.second))).compareTo(a.first.distance(a.second));
+            };
+            Collections.sort(this.settledPairs, comp);
+            Pair partitionPair = this.settledPairs.get(n / 5);
+            this.threshold = partitionPair.first.distance(partitionPair.second);
+        }
+    }
+    
+    public Sock[] getSockArray() {
+        ArrayList<Sock> socks = new ArrayList<Sock>(2 * this.n);
+        for (Pair p : settledPairs) {
+            socks.add(p.first);
+            socks.add(p.second);
+        }
+        for (Pair p : pendingPairs) {
+            socks.add(p.first);
+            socks.add(p.second);
+        }
+        Sock[] sockArray = new Sock[socks.size()];
+        return socks.toArray(sockArray);
+    }
 
     @Override
     public void init(int id, int n, int p, int t, List<Sock> socks) {
         this.id = id;
         this.n = n;
+        this.t = t;
         this.socks = (Sock[]) socks.toArray(new Sock[2 * n]);
+        this.settledPairs = new ArrayList<>();
+        this.pendingPairs = new ArrayList<>();
+        for (int i = 0; i < socks.size() - 1; i += 2) {
+            this.settledPairs.add(new Pair(socks.get(i), socks.get(i + 1)));
+        }
+        this.repair();
         this.myFirstOffer = 0;
         this.mySecondOffer = 0;
     }
-
+    
     @Override
     public Offer makeOffer(List<Request> lastRequests, List<Transaction> lastTransactions) {
         return this.isolatedSocks();
@@ -104,6 +172,7 @@ public class Player extends exchange.sim.Player {
         rankFirstRequest = (myFirstRequest != -1) ? rankFirstRequest : -1;
         rankSecondRequest = (mySecondRequest != -1) ? rankSecondRequest : -1;
 
+        this.t--;
         return new Request(myFirstRequest, rankFirstRequest, mySecondRequest, rankSecondRequest);
     }
 
@@ -119,38 +188,39 @@ public class Player extends exchange.sim.Player {
 
             Remark: rank ranges between 1 and 2
          */
-        int rank;
+        Sock oldSock;
         Sock newSock;
         if (transaction.getFirstID() == id) {
-            rank = transaction.getFirstRank();
+            oldSock = transaction.getFirstSock();
             newSock = transaction.getSecondSock();
         } else {
-            rank = transaction.getSecondRank();
+            oldSock = transaction.getSecondSock();
             newSock = transaction.getFirstSock();
         }
-        if (rank == 1) socks[myFirstOffer] = newSock;
-        else socks[mySecondOffer] = newSock;
+        Pair p = pairsBySock.remove(oldSock);
+        if (p.first == oldSock) {
+            p.first = newSock;
+        } else {
+            p.second = newSock;
+        }
+        repair();
+        adjustThreshold();
     }
 
     @Override
     public List<Sock> getSocks() {
-        int[] match = new Blossom(getCostMatrix(), true).maxWeightMatching();
-        List<Sock> result = new ArrayList<Sock>();
-        for (int i=0; i<match.length; i++) {
-            if (match[i] < i) continue;
-            result.add(socks[i]);
-            result.add(socks[match[i]]);
+        if (t == 0) {
+            this.repair();
         }
-
-        return result;
+        return Arrays.asList(this.getSockArray());
     }
 
-    private float[][] getCostMatrix() {
+    private float[][] getCostMatrix(Sock[] sockArray) {
         float[][] matrix = new float[2*n*(2*n-1)/2][3];
         int idx = 0;
-        for (int i = 0; i < socks.length; i++) {
-            for (int j=i+1; j< socks.length; j++) {
-                matrix[idx] = new float[]{i, j, (float)(-socks[i].distance(socks[j]))};
+        for (int i = 0; i < sockArray.length; i++) {
+            for (int j=i+1; j< sockArray.length; j++) {
+                matrix[idx] = new float[]{i, j, (float)(-sockArray[i].distance(sockArray[j]))};
                 idx ++;
             }
         }
