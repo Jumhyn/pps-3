@@ -38,48 +38,6 @@ public class Player extends exchange.sim.Player {
         return this.isolatedSocks();
     }
 
-    /*
-    @Override
-    public Request requestExchange(List<Offer> offers) {
-
-            offers.get(i)           -       Player i's offer
-            For each offer:
-            offer.getSock(rank = 1, 2)      -       get rank's offer
-            offer.getFirst()                -       equivalent to offer.getSock(1)
-            offer.getSecond()               -       equivalent to offer.getSock(2)
-
-            Remark: For Request object, rank ranges between 1 and 2
-         
-
-        List<Integer> availableOffers = new ArrayList<>();
-        for (int i = 0; i < offers.size(); ++ i) {
-            if (i == id) continue;
-
-            // Encoding the offer information into integer: id * 2 + rank - 1
-            if (offers.get(i).getFirst() != null)
-                availableOffers.add(i * 2);
-            if (offers.get(i).getSecond() != null)
-                availableOffers.add(i * 2 + 1);
-        }
-
-        int test = random.nextInt(3);
-        if (test == 0 || availableOffers.size() == 0) {
-            // In Request object, id == -1 means no request.
-            return new Request(-1, -1, -1, -1);
-        } else if (test == 1 || availableOffers.size() == 1) {
-            // Making random requests
-            int k = availableOffers.get(random.nextInt(availableOffers.size()));
-            return new Request(k / 2, k % 2 + 1, -1, -1);
-        } else {
-            int k1 = availableOffers.get(random.nextInt(availableOffers.size()));
-            int k2 = availableOffers.get(random.nextInt(availableOffers.size()));
-            while (k1 == k2)
-                k2 = availableOffers.get(random.nextInt(availableOffers.size()));
-            return new Request(k1 / 2, k1 % 2 + 1, k2 / 2, k2 % 2 + 1);
-        }
-    }
-    */
-
     @Override
     public Request requestExchange(List<Offer> offers) {
         /*
@@ -214,7 +172,7 @@ public class Player extends exchange.sim.Player {
         return result;
     }
 
-    // Switch our second offered sock for another's player sock and returns
+    // Switch our first and second offered sock for another's player sock and returns
     // new embarrassment. If the first sock was switched for second rank offered
     // sock, the boolean hast to be true.
 
@@ -247,7 +205,7 @@ public class Player extends exchange.sim.Player {
                 // Get original order
                 socks = (Sock[]) originalPairing.toArray(new Sock[2 * n]);
                 // Switch first sock with first on offer at player i to calculate new distance
-                socks[myFirstOffer] = offers.get(i).getFirst();      
+                socks[myFirstOffer] = (isSecond == false) ? offers.get(i).getFirst() : offers.get(i).getSecond();   
                 // Switch second sock to calculate new distance
                 socks[mySecondOffer] = offers.get(j).getFirst();
                 // Calculate new embarrassment                
@@ -269,7 +227,7 @@ public class Player extends exchange.sim.Player {
                 // Get original order
                 socks = (Sock[]) originalPairing.toArray(new Sock[2 * n]);
                 // Switch first sock with first on offer at player i to calculate new distance
-                socks[myFirstOffer] = offers.get(i).getFirst();      
+                socks[myFirstOffer] = (isSecond == false) ? offers.get(i).getFirst() : offers.get(i).getSecond();   
                 // Switch second sock to calculate new distance
                 socks[mySecondOffer] = offers.get(j).getSecond();
                 // Calculate new embarrassment                
