@@ -19,7 +19,9 @@ public class Player extends exchange.sim.Player {
         Remark: you have to manually adjust the order of socks, to minimize the total embarrassment
                 the score is calculated based on your returned list of getSocks(). Simulator will pair up socks 0-1, 2-3, 4-5, etc.
      */
-    private int myFirstOffer, mySecondOffer, myFirstRequest, mySecondRequest, id, n;
+    private int myFirstOffer, mySecondOffer, id, n;
+    private int myFirstRequest, mySecondRequest, rankFirstRequest, rankSecondRequest;
+
     private Sock[] socks;
 
     @Override
@@ -108,27 +110,27 @@ public class Player extends exchange.sim.Player {
                                 
                 // The list with one sock changed is sent to calculate the best possible embarrassment
                 bestEmbarrassmentSoFar = getBestEmbarrassment(originalPairing,
-                                                            bestEmbarrassmentSoFar, offers, i);
+                                                            bestEmbarrassmentSoFar, offers, 
+                                                            i, false);
             }
 
-            /*
+
             if (offers.get(i).getSecond() != null)   {
 
-                socks = (Sock[]) originalPairing.toArray(new Sock[2 * n]);
-                // Switch first sock with second on offer at player i to calculate new distance                
-                socks[myFirstOffer] = offers.get(i).getSecond();
                 // The list with one sock changed is sent to calculate the best possible embarrassment
                 bestEmbarrassmentSoFar = getBestEmbarrassment(new ArrayList<Sock>(Arrays.asList(socks)), 
-                                                                bestEmbarrassmentSoFar, offers, i);
+                                                                bestEmbarrassmentSoFar, offers, 
+                                                                i, true);
             }   
-            */                 
+
+
         }
 
         socks = (Sock[]) originalPairing.toArray(new Sock[2 * n]);
-        int rank1 = (myFirstRequest != -1) ? 1 : -1;
-        int rank2 = (mySecondRequest != -1) ? 2 : -1;
+        rankFirstRequest = (myFirstRequest != -1) ? rankFirstRequest : -1;
+        rankSecondRequest = (mySecondRequest != -1) ? rankSecondRequest : -1;
 
-        return new Request(myFirstRequest, rank1, mySecondRequest, rank2);
+        return new Request(myFirstRequest, rankFirstRequest, mySecondRequest, rankSecondRequest);
     }
 
     @Override
@@ -166,8 +168,6 @@ public class Player extends exchange.sim.Player {
             result.add(socks[match[i]]);
         }
 
-        // Error
-        //socks = (Sock[]) result.toArray(new Sock[2 * n]); 
         return result;
     }
 
@@ -220,19 +220,21 @@ public class Player extends exchange.sim.Player {
 
     private double getBestEmbarrassment(List<Sock> originalPairing,
         double initialEmbarrassment, List<Offer> offers,
-        int i)    {
+        int i, boolean isSecond)    {
 
         double bestEmbarrassmentSoFar = initialEmbarrassment;
 
-        // Switch first sock with first on offer at player i to calculate new distance
-        socks[myFirstOffer] = offers.get(i).getFirst();        
-            
+        // Switch first sock with first or second on offer at player i to calculate new distance
+        socks[myFirstOffer] = (isSecond == false) ? offers.get(i).getFirst() : offers.get(i).getSecond(); 
+        
+        // Get sock pairing    
         socks = (Sock[]) getSocks().toArray(new Sock[2 * n]);
 
         // Calculate new embarrassment
         double firstOfferExchEmb = getTotalEmbarrassment(socks);
         if(firstOfferExchEmb < bestEmbarrassmentSoFar) {
             myFirstRequest = i;
+            rankFirstRequest = (isSecond == false) ? 1 : 2;
             bestEmbarrassmentSoFar = firstOfferExchEmb;
             mySecondRequest = -1;
         }
@@ -240,9 +242,31 @@ public class Player extends exchange.sim.Player {
         for (int j = 0; j < offers.size(); j++) {
             if (j== id) continue;
 
-            if(offers.get(j).getSecond() != null)   {
+            if ((j != i || isSecond == true) && offers.get(j).getFirst() != null)   {
+
+                // Get original order
+                socks = (Sock[]) originalPairing.toArray(new Sock[2 * n]);
+                // Switch first sock with first on offer at player i to calculate new distance
+                socks[myFirstOffer] = offers.get(i).getFirst();      
+                // Switch second sock to calculate new distance
+                socks[mySecondOffer] = offers.get(j).getFirst();
+                // Calculate new embarrassment                
+                socks = (Sock[]) getSocks().toArray(new Sock[2 * n]);
+
+                // Calculate new embarrassment
+                double secondOfferExchEmb = getTotalEmbarrassment(socks);
+                if(secondOfferExchEmb < bestEmbarrassmentSoFar) {
+                    myFirstRequest = i;
+                    rankFirstRequest = (isSecond == false) ? 1 : 2;
+                    mySecondRequest = j;
+                    rankSecondRequest = 1;
+                    bestEmbarrassmentSoFar = secondOfferExchEmb;
+                }
+            }
+
+            if((j != i || isSecond == false) && offers.get(j).getSecond() != null)   {
                 
-                // 
+                // Get original order
                 socks = (Sock[]) originalPairing.toArray(new Sock[2 * n]);
                 // Switch first sock with first on offer at player i to calculate new distance
                 socks[myFirstOffer] = offers.get(i).getFirst();      
@@ -254,7 +278,10 @@ public class Player extends exchange.sim.Player {
                 // Calculate new embarrassment
                 double secondOfferExchEmb = getTotalEmbarrassment(socks);
                 if(secondOfferExchEmb < bestEmbarrassmentSoFar) {
+                    myFirstRequest = i;
+                    rankFirstRequest = (isSecond == false) ? 1 : 2;
                     mySecondRequest = j;
+                    rankSecondRequest = 2;
                     bestEmbarrassmentSoFar = secondOfferExchEmb;
                 }
             }
