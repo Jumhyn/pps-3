@@ -45,6 +45,10 @@ public class Player extends exchange.sim.Player {
     public ArrayList<Pair> settledPairs;
     public ArrayList<Pair> pendingPairs;
     public HashMap<Sock, Pair> pairsBySock;
+
+    public int offerIndex;
+    public boolean tradeCompleted;
+    public int timesPairOffered;
     
     public void repair() {
         pairsBySock = new HashMap<>();
@@ -115,11 +119,39 @@ public class Player extends exchange.sim.Player {
         this.repair();
         this.myFirstOffer = 0;
         this.mySecondOffer = 0;
+
+        this.offerIndex = 0;
+        this.tradeCompleted = false;
+        this.timesPairOffered = 0;
     }
     
     @Override
     public Offer makeOffer(List<Request> lastRequests, List<Transaction> lastTransactions) {
-        return this.isolatedSocks();
+        
+        System.out.println("Pending pairs size: " + pendingPairs.size());
+        if(pendingPairs.size() == 0) {
+            adjustThreshold();
+            offerIndex = 0;
+        }
+
+        System.out.println("Pending pairs size: " + pendingPairs.size());
+        if(tradeCompleted == false) {            
+            if(timesPairOffered == 2)   {
+                offerIndex = ++offerIndex % pendingPairs.size();
+                timesPairOffered = 0;
+            }            
+        }   
+        else    {
+            timesPairOffered = 0;
+            tradeCompleted = false;
+        }
+
+        Pair pairToOffer = pendingPairs.get(offerIndex);
+        
+        if(timesPairOffered++ == 0) 
+            return new Offer(pairToOffer.first, pairToOffer.second);
+        else 
+            return new Offer(pairToOffer.second, pairToOffer.first);    
     }
 
     @Override
