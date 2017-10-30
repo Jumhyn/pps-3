@@ -130,16 +130,15 @@ public class Player extends exchange.sim.Player {
     @Override
     public Offer makeOffer(List<Request> lastRequests, List<Transaction> lastTransactions) {
 
-        System.out.println("Pending pairs size: " + pendingPairs.size() + ", Settled pairs size: " + settledPairs.size());
         if(pendingPairs.size() == 0) {
             adjustThreshold();
             offerIndex = 0;
         }
 
-        System.out.println("Pending pairs size: " + pendingPairs.size());
         if(tradeCompleted == false) {            
             if(timesPairOffered == 2)   {
-                offerIndex = ++offerIndex % pendingPairs.size();
+                ++offerIndex;
+                offerIndex = offerIndex % pendingPairs.size();
                 timesPairOffered = 0;
             }            
             else {
@@ -165,6 +164,9 @@ public class Player extends exchange.sim.Player {
     private double getMinDistance(Sock s) {
         double minDistance = 1000;
         for (Pair p: pendingPairs) {
+            minDistance = Math.min(minDistance, Math.min(s.distance(p.first), s.distance(p.second)));
+        }
+        for (Pair p: settledPairs) {
             minDistance = Math.min(minDistance, Math.min(s.distance(p.first), s.distance(p.second)));
         }
         return minDistance;
