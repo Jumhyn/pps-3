@@ -22,7 +22,7 @@ public class Player extends exchange.sim.Player {
         Remark: you have to manually adjust the order of socks, to minimize the total embarrassment
                 the score is calculated based on your returned list of getSocks(). Simulator will pair up socks 0-1, 2-3, 4-5, etc.
      */
-    public final boolean USE_ABS_THRESHOLD = true;
+    public final boolean USE_ABS_THRESHOLD = false;
     public final double ABS_THRESHOLD_FRAC = 0.8;
     
     private int myFirstOffer, mySecondOffer, id, n, t;
@@ -30,8 +30,6 @@ public class Player extends exchange.sim.Player {
     private List<Request> lastRequests;
     private Sock lastRequestSock1, lastRequestSock2;
     private Pair pairToOffer;
-
-    private Sock[] socks;
     
     public class Pair {
         public Sock first;
@@ -45,6 +43,7 @@ public class Player extends exchange.sim.Player {
     
     public double threshold;
     
+    public ArrayList<Sock> socks;
     public ArrayList<Pair> settledPairs;
     public ArrayList<Pair> pendingPairs;
     public HashMap<Sock, Pair> pairsBySock;
@@ -55,7 +54,7 @@ public class Player extends exchange.sim.Player {
     
     public void repair() {
         pairsBySock = new HashMap<>();
-        Sock[] socks = this.getSockArray();
+        Sock[] socks = this.socks.toArray(new Sock[2 * this.n]);
         int[] match = new Blossom(getCostMatrix(socks), true).maxWeightMatching();
         ArrayList<Pair> result = new ArrayList<Pair>();
         for (int i = 0; i < match.length; i++) {
@@ -86,7 +85,7 @@ public class Player extends exchange.sim.Player {
             this.threshold = this.threshold * ABS_THRESHOLD_FRAC;
         } else {
             Comparator<Pair> comp = (Pair a, Pair b) -> {
-                return (new Double(a.first.distance(a.second))).compareTo(b.first.distance(b.second));
+                return (new Double(b.first.distance(b.second))).compareTo(a.first.distance(a.second));
             };
             Collections.sort(this.settledPairs, comp);
             Pair partitionPair = this.settledPairs.get(n / 5);
@@ -95,17 +94,17 @@ public class Player extends exchange.sim.Player {
     }
     
     public Sock[] getSockArray() {
-        ArrayList<Sock> socks = new ArrayList<Sock>(2 * this.n);
+        ArrayList<Sock> ret = new ArrayList<Sock>(2 * this.n);
         for (Pair p : settledPairs) {
-            socks.add(p.first);
-            socks.add(p.second);
+            ret.add(p.first);
+            ret.add(p.second);
         }
         for (Pair p : pendingPairs) {
-            socks.add(p.first);
-            socks.add(p.second);
+            ret.add(p.first);
+            ret.add(p.second);
         }
-        Sock[] sockArray = new Sock[socks.size()];
-        return socks.toArray(sockArray);
+        Sock[] sockArray = new Sock[ret.size()];
+        return ret.toArray(sockArray);
     }
 
     @Override
@@ -113,14 +112,16 @@ public class Player extends exchange.sim.Player {
         this.id = id;
         this.n = n;
         this.t = t;
-        this.socks = (Sock[]) socks.toArray(new Sock[2 * n]);
+        this.socks = new ArrayList<Sock>(socks);
         this.settledPairs = new ArrayList<>();
         this.pendingPairs = new ArrayList<>();
         for (int i = 0; i < socks.size() - 1; i += 2) {
             this.settledPairs.add(new Pair(socks.get(i), socks.get(i + 1)));
         }
         this.repair();
-        this.threshold = 40.0;
+        if (USE_ABS_THRESHOLD) {
+            this.threshold = 60.0;
+        }
         this.adjustThreshold();
         this.myFirstOffer = 0;
         this.mySecondOffer = 0;
@@ -133,7 +134,7 @@ public class Player extends exchange.sim.Player {
     @Override
     public Offer makeOffer(List<Request> lastRequests, List<Transaction> lastTransactions) {
 
-        System.out.println("Pending pairs size: " + pendingPairs.size());
+        System.out.println("Pending pairs size: " + pendingPairs.size() + ", Settled pairs size: " + settledPairs.size());
         if(pendingPairs.size() == 0) {
             adjustThreshold();
             offerIndex = 0;
@@ -288,12 +289,8 @@ public class Player extends exchange.sim.Player {
             oldSock = transaction.getSecondSock();
             newSock = transaction.getFirstSock();
         }
-        Pair p = pairsBySock.remove(oldSock);
-        if (p.first == oldSock) {
-            p.first = newSock;
-        } else {
-            p.second = newSock;
-        }
+        socks.remove(oldSock);
+        socks.add(newSock);
         repair();
         adjustThreshold();
     }
@@ -318,28 +315,6 @@ public class Player extends exchange.sim.Player {
         return matrix;
     }
     
-    // Finds the two socks whose nearest neighbor is the furthest
-    public Offer isolatedSocks() {
-        double firstLongest = 0;
-        double secondLongest = 0;
-        for (int i = 0; i < socks.length; i++) {
-            double shortest = 500.0; // longest possible dist ~442
-            for (int j = i + 1; j < socks.length; j++) {
-                double dist = socks[i].distance(socks[j]);
-                if (dist < shortest) {
-                    shortest = dist;
-                }
-            }
-            if (shortest >= firstLongest) {
-                secondLongest = firstLongest;
-                mySecondOffer = myFirstOffer;
-                firstLongest = shortest;
-                myFirstOffer = i;
-            }
-        }
-        return new Offer(socks[myFirstOffer], socks[mySecondOffer]);
-    }
-
     // Embarrasment calculation for current list of sockets
     private double getTotalEmbarrassment(Sock[] list) {
 
