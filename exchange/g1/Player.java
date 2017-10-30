@@ -139,7 +139,7 @@ public class Player extends exchange.sim.Player {
         System.out.println("Pending pairs size: " + pendingPairs.size());
         if(tradeCompleted == false) {            
             if(timesPairOffered == 2)   {
-                offerIndex = ++offerIndex % pendingPairs.size();
+                offerIndex = (offerIndex + 1) % pendingPairs.size();
                 timesPairOffered = 0;
             }            
             else {
@@ -295,6 +295,7 @@ public class Player extends exchange.sim.Player {
         socks.add(newSock);
         repair();
         adjustThreshold();
+        offerIndex = 0;
     }
 
     @Override
