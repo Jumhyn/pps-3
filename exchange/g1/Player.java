@@ -86,7 +86,7 @@ public class Player extends exchange.sim.Player {
             this.threshold = this.threshold * ABS_THRESHOLD_FRAC;
         } else {
             Comparator<Pair> comp = (Pair a, Pair b) -> {
-                return (new Double(b.first.distance(b.second))).compareTo(a.first.distance(a.second));
+                return (new Double(a.first.distance(a.second))).compareTo(b.first.distance(b.second));
             };
             Collections.sort(this.settledPairs, comp);
             Pair partitionPair = this.settledPairs.get(n / 5);
@@ -120,6 +120,8 @@ public class Player extends exchange.sim.Player {
             this.settledPairs.add(new Pair(socks.get(i), socks.get(i + 1)));
         }
         this.repair();
+        this.threshold = 40.0;
+        this.adjustThreshold();
         this.myFirstOffer = 0;
         this.mySecondOffer = 0;
 
@@ -130,7 +132,7 @@ public class Player extends exchange.sim.Player {
     
     @Override
     public Offer makeOffer(List<Request> lastRequests, List<Transaction> lastTransactions) {
-        
+
         System.out.println("Pending pairs size: " + pendingPairs.size());
         if(pendingPairs.size() == 0) {
             adjustThreshold();
@@ -153,8 +155,7 @@ public class Player extends exchange.sim.Player {
         }
 
         pairToOffer = pendingPairs.get(offerIndex);
-        
-        if(timesPairOffered++ == 0) 
+        if(timesPairOffered++ == 0)
             return new Offer(pairToOffer.first, pairToOffer.second);
         else 
             return new Offer(pairToOffer.second, pairToOffer.first);    
