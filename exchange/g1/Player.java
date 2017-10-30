@@ -137,8 +137,7 @@ public class Player extends exchange.sim.Player {
 
         if(tradeCompleted == false) {            
             if(timesPairOffered == 2)   {
-                ++offerIndex;
-                offerIndex = offerIndex % pendingPairs.size();
+                offerIndex = (offerIndex + 1) % pendingPairs.size();
                 timesPairOffered = 0;
             }            
             else {
@@ -297,6 +296,7 @@ public class Player extends exchange.sim.Player {
         socks.add(newSock);
         repair();
         adjustThreshold();
+        offerIndex = 0;
     }
 
     @Override
