@@ -46,14 +46,12 @@ public class Player extends exchange.sim.Player {
     public ArrayList<Sock> socks;
     public ArrayList<Pair> settledPairs;
     public ArrayList<Pair> pendingPairs;
-    public HashMap<Sock, Pair> pairsBySock;
 
     public int offerIndex;
     public boolean tradeCompleted;
     public int timesPairOffered;
     
     public void repair() {
-        pairsBySock = new HashMap<>();
         Sock[] socks = this.socks.toArray(new Sock[2 * this.n]);
         int[] match = new Blossom(getCostMatrix(socks), true).maxWeightMatching();
         ArrayList<Pair> result = new ArrayList<Pair>();
@@ -61,8 +59,6 @@ public class Player extends exchange.sim.Player {
             if (match[i] < i) continue;
             Pair p =  new Pair(socks[i], socks[match[i]]);
             result.add(p);
-            pairsBySock.put(socks[i], p);
-            pairsBySock.put(socks[match[i]], p);
         }
         this.settledPairs = result;
         this.pendingPairs.clear();
@@ -166,6 +162,14 @@ public class Player extends exchange.sim.Player {
         return new Sock((a.R + b.R)/2, (a.G + b.G)/2, (a.B + b.B)/2);
     }
 
+    private double getMinDistance(Sock s) {
+        double minDistance = 1000;
+        for (Pair p: pendingPairs) {
+            minDistance = Math.min(minDistance, Math.min(s.distance(p.first), s.distance(p.second)));
+        }
+        return minDistance;
+    }
+
     @Override
     public Request requestExchange(List<Offer> offers) {
         /*
@@ -177,9 +181,7 @@ public class Player extends exchange.sim.Player {
 
             Remark: For Request object, rank ranges between 1 and 2
          */
-        double d = this.pairToOffer.first.distance(this.pairToOffer.second);
-        Sock pseudoMeanSock = getMeanSock(this.pairToOffer.first, this.pairToOffer.second);
-        double minValSoFar = d/2;
+        double minValSoFar = 1000;
         myFirstRequestID = -1;
         myFirstRequestRank = -1;
         mySecondRequestID = -1;
@@ -192,12 +194,12 @@ public class Player extends exchange.sim.Player {
                 for (int rank = 1; rank <= 2; ++ rank) {
                     Sock s = offers.get(i).getSock(rank);
                     if (s != null) {
-                        if (s.distance(pseudoMeanSock) <= minValSoFar) {
+                        if (getMinDistance(s) <= minValSoFar) {
                             mySecondRequestID = myFirstRequestID;
                             mySecondRequestRank = myFirstRequestRank;
                             myFirstRequestID = i;
                             myFirstRequestRank = rank;
-                            minValSoFar = s.distance(pseudoMeanSock);
+                            minValSoFar = getMinDistance(s);
                         }
                     }
                 }
@@ -221,12 +223,12 @@ public class Player extends exchange.sim.Player {
                 for (int rank = 1; rank <= 2; ++ rank) {
                     Sock s = offers.get(player).getSock(rank);
                     if (s != null) {
-                        if (s.distance(pseudoMeanSock) <= minValSoFar) {
+                        if (getMinDistance(s) <= minValSoFar) {
                             mySecondRequestID = myFirstRequestID;
                             mySecondRequestRank = myFirstRequestRank;
                             myFirstRequestID = player;
                             myFirstRequestRank = rank;
-                            minValSoFar = s.distance(pseudoMeanSock);
+                            minValSoFar = getMinDistance(s);
                         }
                     }
                 }
@@ -253,12 +255,12 @@ public class Player extends exchange.sim.Player {
                             if (lastRequestSecondID == i && lastRequestSock2.equals(s)) {
                                 continue;
                             }
-                            if (s.distance(pseudoMeanSock) <= minValSoFar) {
+                            if (getMinDistance(s) <= minValSoFar) {
                                 mySecondRequestID = myFirstRequestID;
                                 mySecondRequestRank = myFirstRequestRank;
                                 myFirstRequestID = i;
                                 myFirstRequestRank = rank;
-                                minValSoFar = s.distance(pseudoMeanSock);
+                                minValSoFar = getMinDistance(s);
                             }
                         }
                     }
