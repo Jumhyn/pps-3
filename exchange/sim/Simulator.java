@@ -27,7 +27,7 @@ public class Simulator {
     private static double fps = 5;
     private static int n = 20;
     private static int p = 0;
-    private static int t = 1000;
+    private static int t = 10;
     private static List<String> playerNames = new ArrayList<String>();
     private static PlayerWrapper[] players;
     private static double[] totalEmbarrassments;

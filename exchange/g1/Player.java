@@ -186,7 +186,7 @@ public class Player extends exchange.sim.Player {
                     playersRequestHistory.put(j, playerRequest);
                 }
             }
-            printRequestHistory();
+            // printRequestHistory();
         }        
 
         if(pendingPairs.size() == 0) {
@@ -195,7 +195,7 @@ public class Player extends exchange.sim.Player {
         }
 
         if(tradeCompleted == false) {            
-            if(timesPairOffered == 2 || marketHasInterest)   {
+            if(timesPairOffered == 2 || !marketHasInterest)   {
                 offerIndex = (offerIndex + 1) % pendingPairs.size();
                 timesPairOffered = 0;
             }            
