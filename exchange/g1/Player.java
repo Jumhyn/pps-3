@@ -28,9 +28,10 @@ public class Player extends exchange.sim.Player {
     private int myFirstOffer, mySecondOffer, id, n, t, turns;
     private int myFirstRequestID, myFirstRequestRank, mySecondRequestID, mySecondRequestRank;
     private List<Request> lastRequests;
-    private List<Offer> lastOffers;
+    private Offer lastOffer;
     private Sock lastRequestSock1, lastRequestSock2;
     private Pair pairToOffer;
+    private boolean marketHasInterest;
     
     public class Pair {
         public Sock first;
@@ -137,30 +138,55 @@ public class Player extends exchange.sim.Player {
             this.playersRequestHistory.put(i, new ArrayList<Sock>());
         }
     }
+
+    private List<Sock> getTradedSocks(List<Transaction> lastTransactions) {
+        List<Sock> res = new ArrayList<Sock>();
+        for (Transaction transaction: lastTransactions) {
+            if (transaction.getFirstID() == id) {
+                System.out.println(transaction.getFirstSock() + " gets traded!");
+                res.add(transaction.getFirstSock());
+            } else if (transaction.getSecondID() == id) {
+                System.out.println(transaction.getSecondSock() + " gets traded!");
+                res.add(transaction.getSecondSock());
+            }
+        }
+        return res;
+    }
+
+    private void printRequestHistory(){
+        System.out.println("Printing Request History for Player " + this.id);
+        for (HashMap.Entry<Integer, ArrayList<Sock>> entry : playersRequestHistory.entrySet()) {
+            System.out.println("ID = " + entry.getKey());
+            for (Sock s: entry.getValue()) {
+                System.out.println("   " + s);
+            }
+        }
+    }
     
     @Override
     public Offer makeOffer(List<Request> lastRequests, List<Transaction> lastTransactions) {
-
+        marketHasInterest = false;
         if (turns > 0) {
+            List<Sock> tradedSocks = getTradedSocks(lastTransactions);
             for(int j=0; j < lastRequests.size(); j++ ) {
                 if(j == id) continue;
-                for (int i = 0; i < lastOffers.size(); i++) {    
-
-                    // System.out.println("J " + j + " I " + i);
-                    // System.out.println("First id " + lastRequests.get(j).getFirstID());
-                    // System.out.println("Second id " + lastRequests.get(j).getFirstID());
-                    if (lastRequests.get(j).getFirstID() == i) {
-                        ArrayList<Sock> playerRequest = playersRequestHistory.get(j);
-                        playerRequest.add(lastOffers.get(i).getFirst());
-                        playersRequestHistory.put(j, playerRequest);
-                    } 
-                    if(lastRequests.get(j).getSecondID() == i) {
-                        ArrayList<Sock> playerRequest = playersRequestHistory.get(j);              
-                        playerRequest.add(lastOffers.get(i).getSecond());
-                        playersRequestHistory.put(j, playerRequest);
-                    }
+                // System.out.println("J " + j + " I " + i);
+                // System.out.println("First id " + lastRequests.get(j).getFirstID());
+                // System.out.println("Second id " + lastRequests.get(j).getFirstID());
+                if (lastRequests.get(j).getFirstID() == this.id && (!tradedSocks.contains(lastOffer.getSock(lastRequests.get(j).getFirstRank())))) {
+                    marketHasInterest = true;
+                    ArrayList<Sock> playerRequest = playersRequestHistory.get(j);
+                    playerRequest.add(lastOffer.getSock(lastRequests.get(j).getFirstRank()));
+                    playersRequestHistory.put(j, playerRequest);
+                } 
+                if(lastRequests.get(j).getSecondID() == this.id && (!tradedSocks.contains(lastOffer.getSock(lastRequests.get(j).getSecondRank())))) {
+                    marketHasInterest = true;
+                    ArrayList<Sock> playerRequest = playersRequestHistory.get(j);              
+                    playerRequest.add(lastOffer.getSock(lastRequests.get(j).getSecondRank()));
+                    playersRequestHistory.put(j, playerRequest);
                 }
             }
+            printRequestHistory();
         }        
 
         if(pendingPairs.size() == 0) {
@@ -169,7 +195,7 @@ public class Player extends exchange.sim.Player {
         }
 
         if(tradeCompleted == false) {            
-            if(timesPairOffered == 2)   {
+            if(timesPairOffered == 2 || marketHasInterest)   {
                 offerIndex = (offerIndex + 1) % pendingPairs.size();
                 timesPairOffered = 0;
             }            
@@ -222,7 +248,7 @@ public class Player extends exchange.sim.Player {
         mySecondRequestID = -1;
         mySecondRequestRank = -1;
         this.t--;
-        lastOffers = offers;
+        lastOffer = offers.get(this.id);
 
         if (timesPairOffered == 1) { // First time offering these socks
             for (int i = 0; i < offers.size(); ++ i) {
@@ -327,6 +353,11 @@ public class Player extends exchange.sim.Player {
         } else {
             oldSock = transaction.getSecondSock();
             newSock = transaction.getFirstSock();
+        }
+        // Remove oldSock from history list
+        // We can't offer it anymore
+        for (List<Sock> value : playersRequestHistory.values()) {
+            while (value.remove(oldSock)) {}
         }
         socks.remove(oldSock);
         socks.add(newSock);
