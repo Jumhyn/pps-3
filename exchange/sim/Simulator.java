@@ -90,10 +90,6 @@ public class Simulator {
         }
         for (int turn = 1; turn <= t; ++turn) {
             if (!silent) System.out.println("Round " + turn + ":");
-            for (int i = 0; i < p; ++ i) {
-                offers[i] = new Offer(null, null);
-                requests[i] = new Request(-1, -1, -1, -1);
-            }
             // Gather offers
             for (int i = 0; i < p; ++i) {
                 if (!players[i].isActive()) continue;
@@ -131,6 +127,12 @@ public class Simulator {
 
             if (gui) {
                 gui(server, state(fps, turn, offers, requests, null, totalEmbarrassments));
+            }
+
+            for (int i = 0; i < p; ++ i) {
+                if (players[i].isActive()) continue;
+                offers[i] = new Offer(null, null);
+                requests[i] = new Request(-1, -1, -1, -1);
             }
 
             lastTransactions = ExchangeCenter.exchange(offers, requests);
