@@ -66,16 +66,20 @@ public class Player extends exchange.sim.Player {
     public HashMap<Integer, ArrayList<Sock>> playersRequestHistory;
     
     public void repair() {
-        Sock[] socks = this.socks.toArray(new Sock[2 * this.n]);
-        int[] match = new Blossom(getCostMatrix(socks), true).maxWeightMatching();
-        ArrayList<Pair> result = new ArrayList<Pair>();
-        for (int i = 0; i < match.length; i++) {
-            if (match[i] < i) continue;
-            Pair p =  new Pair(socks[i], socks[match[i]]);
-            result.add(p);
+        this.settledPairs.clear();
+        pair(this.socks);
+        for (int i = 0; i < this.socks.size(); i += 2) {
+            this.settledPairs.add(new Pair(this.socks.get(i), this.socks.get(i + 1)));
         }
-        this.settledPairs = result;
         this.pendingPairs.clear();
+    }
+    
+    public void pair(List<Sock> sockList) {
+        if (sockList.size() <= 200) {
+            blossomPair(sockList);
+        } else {
+            greedyPair(sockList);
+        }
     }
     
     public void blossomPair(List<Sock> sockList) {
@@ -397,7 +401,6 @@ public class Player extends exchange.sim.Player {
         lastoffers = offers;
         System.out.println(timesPairOffered);
         if (timesPairOffered % 2 == 1) { // First time offering these socks
-            E1.clear();
             minValSoFar = getTotalEmbarrassment(this.socks);
             for (int i = 0; i < offers.size(); ++ i) {
                 if (i == id) continue;
@@ -407,7 +410,13 @@ public class Player extends exchange.sim.Player {
                     if (s != null) {
                         Sock[] possibleTrades = {pairToOffer.first, pairToOffer.second};
                         for (Sock myOffer : possibleTrades) {
-                            double score = scoreForTrade(myOffer, s);
+                            Pair keyPair = new Pair(myOffer, s);
+                            double score;
+                            if (E1.containsKey(keyPair)) {
+                                score = E1.get(keyPair);
+                            } else {
+                                score = scoreForTrade(myOffer, s);
+                            }
                             if (score < minValSoFar) {
                                 mySecondRequestID = myFirstRequestID;
                                 mySecondRequestRank = myFirstRequestRank;
@@ -419,7 +428,7 @@ public class Player extends exchange.sim.Player {
                                 mySecondRequestID = i;
                                 mySecondRequestRank = rank;
                             }
-                            E1.put(new Pair(myOffer, s), score);
+                            E1.put(keyPair, score);
                         }
                     }
                 }
@@ -571,20 +580,11 @@ public class Player extends exchange.sim.Player {
     }
 
     public ArrayList<Sock> switchSockAndRepair(Sock N, Sock Q)  {
-
-        Sock[] socksSwitched = this.socks.toArray(new Sock[2 * this.n]);
+        ArrayList<Sock> socksSwitched = new ArrayList<Sock>(this.socks);
         int index = this.socks.indexOf(Q);
-        socksSwitched[index] = N;
-        int[] match = new Blossom(getCostMatrix(socksSwitched), true).maxWeightMatching();
-        ArrayList<Sock> result = new ArrayList<Sock>();
-
-        for (int i=0; i<match.length; i++) {
-            if (match[i] < i) continue;
-            result.add(socksSwitched[i]);
-            result.add(socksSwitched[match[i]]);
-        }
-
-        return result;                    
+        socksSwitched.set(index, N);
+        pair(socksSwitched);
+        return socksSwitched;
     }
     
     
