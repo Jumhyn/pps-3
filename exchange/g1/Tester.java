@@ -15,7 +15,7 @@ public class Tester {
                 totalRuntime += testRuntime(n);
             }
             double averageRuntime = ((double)totalRuntime) / 10;
-            System.out.println(n + "\t" + averageAverageDistance + "\t" + averageRuntime);
+            System.out.println(n + "\t" + averageRuntime);
         }
     }
     

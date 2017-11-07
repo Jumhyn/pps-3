@@ -24,7 +24,7 @@ public class Simulator {
     private static boolean gui = false;
     private static boolean silent = false;
     private static double fps = 5;
-    private static int n = 20;
+    private static int n = 3;
     private static int p = 0;
     private static int t = 1000;
     private static List<String> playerNames = new ArrayList<String>();
@@ -146,6 +146,7 @@ public class Simulator {
             }
 
             if (!silent) System.out.println("Completed transactions: ");
+
             for (Transaction transaction : lastTransactions) {
                 players[transaction.getFirstID()].removeSock(transaction.getFirstSock());
                 players[transaction.getSecondID()].removeSock(transaction.getSecondSock());

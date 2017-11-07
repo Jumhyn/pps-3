@@ -182,36 +182,6 @@ public class Player extends exchange.sim.Player {
         }
 
     }
-    /*
-    public void addInterestingSocks(Set<Sock> interestingSocks) {
-        
-        firstSock = lastoffers.get(j).getFirst();
-        secondSock = lastoffers.get(j).getFirst(); 
-        double pairDistance = lastoffer.getFirst().distance(lastoffer.getSecond())
-
-        isInteresingForUs = lastRequests.get(this.id).contains(firstSock); // This should be change for a distance metric
-        if(isInteresingForUs && (!tradedSocks.contains(firstSock))
-        {
-            interestingSocks.add(firstSock);
-        } 
-        isInteresingForUs = lastRequests.get(this.id).contains(secondSock); // This should be change for a distance metric
-        if(isInteresingForUs && (!tradedSocks.contains(secondSock)) 
-        {
-            interestingSocks.add(firstSock);
-        }
-
-    }
-    
-    Offer:
-
-    1. HashMap<id, ArrayList<Sock>> that tracks interest to our group’s sock;
-    2. if a transaction didn’t happen, we will store the interest to the hash map
-    3. if a transaction happened, we remove the sock from the hash map,
-    4. When we are offering socks, we will first look at last round’s offering from other group
-        1. if they have a sock we want, and it didn’t get traded, and they showed interest to one of the sock we have
-            1. compare the gain from this trade. if it’s a positive gain, offer this sock 
-        2. otherwise, do whatever we did
-    */
     
     @Override
     public Offer makeOffer(List<Request> lastRequests, List<Transaction> lastTransactions) {
@@ -250,6 +220,7 @@ public class Player extends exchange.sim.Player {
         }
         // printEmbarrassmentAfterSwitch(E2);
         
+        // Get player history 
         if (turns > 0) {
             
             for (int j = 0; j < lastRequests.size(); j++) {
@@ -260,21 +231,14 @@ public class Player extends exchange.sim.Player {
                     ArrayList<Sock> playerRequest = playersRequestHistory.get(j);
                     playerRequest.add(lastOffer.getSock(lastRequests.get(j).getFirstRank()));
                     playersRequestHistory.put(j, playerRequest);
-
-                    // Add interesting sock to the set of socks that we might offer
-                    // addInterestingSocks(interestingSocks, j);
                 } 
                 if(lastRequests.get(j).getSecondID() == this.id && (!tradedSocks.contains(lastOffer.getSock(lastRequests.get(j).getSecondRank())))) {
                     ArrayList<Sock> playerRequest = playersRequestHistory.get(j);              
                     playerRequest.add(lastOffer.getSock(lastRequests.get(j).getSecondRank()));
                     playersRequestHistory.put(j, playerRequest);
-
-                    // Add interesting sock to the set of socks that we might offer
-                    // addInterestingSocks(interestingSocks, j);
                 }
             }
         }
-
 
         if(pendingPairs.size() == 0) {
             adjustThreshold();
