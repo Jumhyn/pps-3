@@ -165,6 +165,7 @@ public class Player extends exchange.sim.Player {
         this.adjustThreshold();
         this.myFirstOffer = 0;
         this.mySecondOffer = 0;
+        this.E1 = new HashMap<Pair, Double>();
 
         this.offerIndex = 0;
         this.tradeCompleted = false;
@@ -373,6 +374,14 @@ public class Player extends exchange.sim.Player {
         return minDistance;
     }
 
+    public double scoreForTrade(Sock ours, Sock theirs) {
+        if (n <= 10) {
+            return getTotalEmbarrassment(switchSockAndRepair(theirs, ours));
+        } else {
+            return getMinDistance(theirs);
+        }
+    }
+
     @Override
     public Request requestExchange(List<Offer> offers) {
         /*
@@ -384,7 +393,7 @@ public class Player extends exchange.sim.Player {
 
             Remark: For Request object, rank ranges between 1 and 2
          */
-        double minValSoFar = 1000;
+        double minValSoFar = 1000 * this.n;
         myFirstRequestID = -1;
         myFirstRequestRank = -1;
         mySecondRequestID = -1;
@@ -395,18 +404,24 @@ public class Player extends exchange.sim.Player {
         lastoffers = offers;
         System.out.println(timesPairOffered);
         if (timesPairOffered % 2 == 1) { // First time offering these socks
+            minValSoFar = getTotalEmbarrassment(this.socks);
             for (int i = 0; i < offers.size(); ++ i) {
                 if (i == id) continue;
 
                 for (int rank = 1; rank <= 2; ++ rank) {
                     Sock s = offers.get(i).getSock(rank);
                     if (s != null) {
-                        if (getMinDistance(s) <= minValSoFar) {
-                            mySecondRequestID = myFirstRequestID;
-                            mySecondRequestRank = myFirstRequestRank;
-                            myFirstRequestID = i;
-                            myFirstRequestRank = rank;
-                            minValSoFar = getMinDistance(s);
+                        Sock[] possibleTrades = {pairToOffer.first, pairToOffer.second};
+                        for (Sock myOffer : possibleTrades) {
+                            double score = scoreForTrade(myOffer, s);
+                            if (score <= minValSoFar) {
+                                mySecondRequestID = myFirstRequestID;
+                                mySecondRequestRank = myFirstRequestRank;
+                                myFirstRequestID = i;
+                                myFirstRequestRank = rank;
+                                minValSoFar = getMinDistance(s);
+                            }
+                            E1.put(new Pair(myOffer, s), score);
                         }
                     }
                 }

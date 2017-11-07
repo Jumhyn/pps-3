@@ -1,6 +1,7 @@
 package exchange.g1;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import exchange.g1.Blossom;
@@ -9,15 +10,15 @@ import exchange.sim.Multiset;
 
 public class Tester {
     public static void main(String[] args) {
-        for (int n = 10; n <= 1000; n += 10) {
+        for (int n = 1000; n <= 1000; n += 10) {
             double totalAverageDistance = 0.0;
             long totalRuntime = 0;
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 100; i++) {
                 totalAverageDistance += testAverageDistance(n);
                 totalRuntime += testRuntime(n);
             }
-            double averageAverageDistance = totalAverageDistance / 10;
-            double averageRuntime = ((double)totalRuntime) / 10;
+            double averageAverageDistance = totalAverageDistance / 100;
+            double averageRuntime = ((double)totalRuntime) / 100;
             System.out.println(n + "\t" + averageAverageDistance + "\t" + averageRuntime);
         }
     }
@@ -30,7 +31,7 @@ public class Tester {
             socks.add(sock);
         }
         long start = System.currentTimeMillis();
-        pair(socks);
+        greedyPair(socks);
         long elapsed = System.currentTimeMillis() - start;
         return elapsed;
     }
@@ -42,7 +43,7 @@ public class Tester {
             Sock sock = new Sock(random.nextInt(256), random.nextInt(256), random.nextInt(256));
             socks.add(sock);
         }
-        pair(socks);
+        greedyPair(socks);
         double totalDistance = 0.0;
         for (int i = 0; i < 2 * n - 1; i += 2) {
             totalDistance += socks.get(i).distance(socks.get(i + 1));
@@ -50,7 +51,7 @@ public class Tester {
         return totalDistance / n;
     }
     
-    public static void pair(ArrayList<Sock> socks) {
+    public static void pair(List<Sock> socks) {
         Sock[] sockArray = socks.toArray(new Sock[socks.size()]);
         int[] match = new Blossom(getCostMatrix(sockArray), true).maxWeightMatching();
         socks.clear();
@@ -59,6 +60,38 @@ public class Tester {
             socks.add(sockArray[i]);
             socks.add(sockArray[match[i]]);
         }
+    }
+    
+    public static void segmentBlossomPair(ArrayList<Sock> sockList) {
+        ArrayList<Sock> pairedList = new ArrayList<Sock>();
+        int segmentSize = 100;
+        for (int i = 0; i < sockList.size(); i += segmentSize) {
+            List<Sock> subList = sockList.subList(i, i + segmentSize);
+            pair(subList);
+        }
+    }
+    
+    public static void greedyPair(ArrayList<Sock> sockList) {
+        ArrayList<Sock> pairedList = new ArrayList<Sock>();
+        while (sockList.size() > 0) {
+            if (sockList.size() < 100) {
+                pair(sockList);
+                break;
+            }
+            Sock toPair = sockList.remove(sockList.size() - 1);
+            double minDistance = toPair.distance(sockList.get(0));
+            int minIndex = 0;
+            for (int i = 0; i < sockList.size(); i++) {
+                Sock s = sockList.get(i);
+                if (toPair.distance(s) < minDistance) {
+                    minDistance = toPair.distance(s);
+                    minIndex = i;
+                }
+            }
+            pairedList.add(sockList.remove(minIndex));
+            pairedList.add(toPair);
+        }
+        sockList.addAll(pairedList);
     }
     
     private static float[][] getCostMatrix(Sock[] sockArray) {
