@@ -309,13 +309,13 @@ public class Player extends exchange.sim.Player {
     	// We look at the currentIndex pair (Sock A <-> B) and currentIndex + 1 pair (Sock C <-> D)
     	int nextIndex = (currentIndex + 1) % pendingPairs.size();
     	if (timesPairOffered == 0) {
-    		return new Pair(pendingPairs.get(currentIndex).first, pendingPairs.get(nextIndex).first);
+    		return new Pair(pendingPairs.get(currentIndex).first, pendingPairs.get(nextIndex).second);
     	} else if (timesPairOffered == 1) {
-    		return new Pair(pendingPairs.get(nextIndex).first, pendingPairs.get(currentIndex).first);
+    		return new Pair(pendingPairs.get(nextIndex).second, pendingPairs.get(currentIndex).first);
     	} else if (timesPairOffered == 2) {
-    		return new Pair(pendingPairs.get(currentIndex).second, pendingPairs.get(nextIndex).second);
+    		return new Pair(pendingPairs.get(currentIndex).second, pendingPairs.get(nextIndex).first);
     	} else if (timesPairOffered == 3) {
-    		return new Pair(pendingPairs.get(nextIndex).second, pendingPairs.get(currentIndex).second);
+    		return new Pair(pendingPairs.get(nextIndex).first, pendingPairs.get(currentIndex).second);
     	} else {
     		System.out.println("Error! timesPairOffered " + timesPairOffered + " is not valid!");
     		return new Pair(pendingPairs.get(currentIndex).first, pendingPairs.get(nextIndex).first);
@@ -466,9 +466,10 @@ public class Player extends exchange.sim.Player {
         // We can't offer it anymore
         for (List<Sock> value : playersRequestHistory.values()) {
             while (value.remove(oldSock)) {}
-        }        
+        }   
         socks.remove(oldSock);
         socks.add(newSock);
+        // System.out.println("b" + socks.size());
         repair();
         adjustThreshold();
         offerIndex = 0;
