@@ -165,6 +165,17 @@ public class Player extends exchange.sim.Player {
         }
     }
 
+    private void printEmbarrasmentAfterSwitch(HashMap<Integer, HashMap<Integer, Double>> E2) {
+
+        System.out.println("Printing Embarrasment after switching socks History for Player " + this.id);
+        for (HashMap.Entry<Integer, HashMap<Integer, Double>> player : E2.entrySet()) {
+            System.out.println("ID: " + player.getKey());
+            for (HashMap.Entry<Integer, Double> sockSwitch: player.getValue().entrySet()) {
+                System.out.println("Sock: " + sockSwitch.getKey() + ", embarrasment: " + sockSwitch.getValue());
+            }
+        }
+
+    }
     /*
     public void addInterestingSocks(Set<Sock> interestingSocks) {
         
@@ -203,33 +214,31 @@ public class Player extends exchange.sim.Player {
         HashMap<Integer, HashMap<Integer, Double>> E2 = new HashMap<Integer, HashMap<Integer, Double>>();
         List<Sock> tradedSocks = getTradedSocks(lastTransactions);
 
-        /*
-        if(turns % 2 == 0) { // even round
+
+        if(turns % 2 == 0 && turns > 0 ) { // even round
             
             for(int j=0; j < lastRequests.size(); j++ ) {
                 if(j == this.id) continue;
                 // Player j is not interested in us
                 if(lastRequests.get(j).getFirstID() != this.id && lastRequests.get(j).getSecondID() != this.id)  {
+
                     ArrayList<Sock> playerRequest = playersRequestHistory.get(j);
                     Sock firstSock = lastoffers.get(j).getFirst();
-                    Sock secondSock = lastoffers.get(j).getFirst();
+                    Sock secondSock = lastoffers.get(j).getSecond();
 
                     HashMap<Integer, Double> playerScore = new HashMap<Integer, Double>();
 
                     // Sock is not null and has not been traded away
-                    if (firstSock != null && (!tradedSocks.contains(firstSock))) {
-                        Sock Q = playerRequest.get(playerRequest.size()-1);                        
-                        System.out.println("AAAAAAA");
+                    if (firstSock != null && (!tradedSocks.contains(firstSock)) && playerRequest.size() > 0) {
+                        Sock Q = playerRequest.get(playerRequest.size()-1);              
                         ArrayList<Sock> result = switchSockAndRepair(firstSock, Q);                  
                         double embarrasment = getTotalEmbarrassment(result);                    
                         playerScore.put(1, embarrasment);
                     }
 
                     // Sock is not null and has not been traded away
-                    if (secondSock != null && (!tradedSocks.contains(secondSock))) {
-                        
+                    if (secondSock != null && (!tradedSocks.contains(secondSock))  && playerRequest.size() > 0) {                        
                         Sock Q = playerRequest.get(playerRequest.size()-1); 
-                        System.out.println("BBBBBBB");
                         ArrayList<Sock> result = switchSockAndRepair(secondSock, Q);                  
                         double embarrasment = getTotalEmbarrassment(result);                    
                         playerScore.put(2, embarrasment);
@@ -238,15 +247,7 @@ public class Player extends exchange.sim.Player {
                 }
             }
         }
-
-        System.out.println("-----------------------");
-        for (HashMap.Entry<Integer, HashMap<Integer, Double>> player : E2.entrySet()) {
-            System.out.println("ID = " + player.getKey());
-            for (HashMap.Entry<Integer, Double> sockSwitch: player.entrySet()) {
-                System.out.println("   " + sockSwitch.getValue());
-            }
-        }
-
+        printEmbarrasmentAfterSwitch(E2);
         
         if (turns > 0) {
             
@@ -261,7 +262,7 @@ public class Player extends exchange.sim.Player {
                     playersRequestHistory.put(j, playerRequest);
 
                     // Add interesting sock to the set of socks that we might offer
-                    addInterestingSocks(interestingSocks, j);
+                    // addInterestingSocks(interestingSocks, j);
                 } 
                 if(lastRequests.get(j).getSecondID() == this.id && (!tradedSocks.contains(lastOffer.getSock(lastRequests.get(j).getSecondRank())))) {
                     marketHasInterest = true;
@@ -270,11 +271,11 @@ public class Player extends exchange.sim.Player {
                     playersRequestHistory.put(j, playerRequest);
 
                     // Add interesting sock to the set of socks that we might offer
-                    addInterestingSocks(interestingSocks, j);
+                    // addInterestingSocks(interestingSocks, j);
                 }
             }
         }
-        */
+
 
         if(pendingPairs.size() == 0) {
             adjustThreshold();
@@ -447,7 +448,7 @@ public class Player extends exchange.sim.Player {
         // We can't offer it anymore
         for (List<Sock> value : playersRequestHistory.values()) {
             while (value.remove(oldSock)) {}
-        }
+        }        
         socks.remove(oldSock);
         socks.add(newSock);
         repair();
