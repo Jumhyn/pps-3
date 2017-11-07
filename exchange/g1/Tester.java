@@ -9,11 +9,14 @@ import exchange.sim.Multiset;
 
 public class Tester {
     public static void main(String[] args) {
-        for (int n = 10; n <= 100; n += 10) {
+        for (int n = 10; n <= 1000; n += 10) {
+            double totalAverageDistance = 0.0;
             long totalRuntime = 0;
-            for (int i = 0; i < 25; i++) {
+            for (int i = 0; i < 10; i++) {
+                totalAverageDistance += testAverageDistance(n);
                 totalRuntime += testRuntime(n);
             }
+            double averageAverageDistance = totalAverageDistance / 10;
             double averageRuntime = ((double)totalRuntime) / 10;
             System.out.println(n + "\t" + averageAverageDistance + "\t" + averageRuntime);
         }
