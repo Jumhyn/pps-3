@@ -283,8 +283,12 @@ public class Player extends exchange.sim.Player {
         }
 
         if(tradeCompleted == false) {            
-            if(timesPairOffered == 2 || !marketHasInterest)   {
-                offerIndex = (offerIndex + 1) % pendingPairs.size();
+        	if (!marketHasInterest && turns > 0) {
+        		// Don't need to reverse the ranking and offer again
+        		timesPairOffered += 1;
+        	}
+            if (timesPairOffered >= 4)   {
+                offerIndex = (offerIndex + 2) % pendingPairs.size();
                 timesPairOffered = 0;
             }            
             else {
@@ -295,13 +299,27 @@ public class Player extends exchange.sim.Player {
             timesPairOffered = 0;
             tradeCompleted = false;
         }
-
         
-        pairToOffer = pendingPairs.get(offerIndex);
-        if(timesPairOffered++ == 0)
-            return new Offer(pairToOffer.first, pairToOffer.second);
-        else 
-            return new Offer(pairToOffer.second, pairToOffer.first);    
+        pairToOffer = getPairToOffer(timesPairOffered, offerIndex);
+        timesPairOffered++;
+        return new Offer(pairToOffer.first, pairToOffer.second);
+    }
+
+    private Pair getPairToOffer(int timesPairOffered, int currentIndex) {
+    	// We look at the currentIndex pair (Sock A <-> B) and currentIndex + 1 pair (Sock C <-> D)
+    	int nextIndex = (currentIndex + 1) % pendingPairs.size();
+    	if (timesPairOffered == 0) {
+    		return new Pair(pendingPairs.get(currentIndex).first, pendingPairs.get(nextIndex).first);
+    	} else if (timesPairOffered == 1) {
+    		return new Pair(pendingPairs.get(nextIndex).first, pendingPairs.get(currentIndex).first);
+    	} else if (timesPairOffered == 2) {
+    		return new Pair(pendingPairs.get(currentIndex).second, pendingPairs.get(nextIndex).second);
+    	} else if (timesPairOffered == 3) {
+    		return new Pair(pendingPairs.get(nextIndex).second, pendingPairs.get(currentIndex).second);
+    	} else {
+    		System.out.println("Error! timesPairOffered " + timesPairOffered + " is not valid!");
+    		return new Pair(pendingPairs.get(currentIndex).first, pendingPairs.get(nextIndex).first);
+    	}
     }
 
     private Sock getMeanSock(Sock a, Sock b) {
@@ -339,8 +357,8 @@ public class Player extends exchange.sim.Player {
         turns++;
         lastOffer = offers.get(this.id);
         lastoffers = offers;
-
-        if (timesPairOffered == 1) { // First time offering these socks
+        System.out.println(timesPairOffered);
+        if (timesPairOffered % 2 == 1) { // First time offering these socks
             for (int i = 0; i < offers.size(); ++ i) {
                 if (i == id) continue;
 
