@@ -220,7 +220,6 @@ public class Player extends exchange.sim.Player {
         }
 
         // printEmbarrassmentAfterSwitch(E2);
-
         
         // Get player history 
         if (turns > 0) {

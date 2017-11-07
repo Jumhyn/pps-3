@@ -146,6 +146,7 @@ public class Simulator {
             }
 
             if (!silent) System.out.println("Completed transactions: ");
+
             for (Transaction transaction : lastTransactions) {
                 players[transaction.getFirstID()].removeSock(transaction.getFirstSock());
                 players[transaction.getSecondID()].removeSock(transaction.getSecondSock());
