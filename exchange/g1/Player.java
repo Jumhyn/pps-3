@@ -43,8 +43,14 @@ public class Player extends exchange.sim.Player {
             this.first = fst;
             this.second = snd;
         }
+
+        public int hashCode() {
+            return first.hashCode() * second.hashCode();
+        }
     }
     
+    private HashMap<Pair, Double> E1;
+
     public double threshold;
     
     public ArrayList<Sock> socks;
@@ -355,35 +361,6 @@ public class Player extends exchange.sim.Player {
     private Sock getMeanSock(Sock a, Sock b) {
         return new Sock((a.R + b.R)/2, (a.G + b.G)/2, (a.B + b.B)/2);
     }
-    
-    private double initialScoreValue(Sock s) {
-        if (this.n <= 100) {
-            return getTotalEmbarrassment(this.socks);
-        } else {
-            return 1000;
-        }
-    }
-    
-    private double getSockScore(Sock s) {
-        if (this.n <= 100) {
-            this.socks.remove(pairToOffer.first);
-            this.socks.add(s);
-            blossomPair(this.socks);
-            double embarrassment1 = getTotalEmbarrassment(this.socks);
-
-            this.socks.remove(pairToOffer.second);
-            this.socks.add(pairToOffer.first);
-            blossomPair(this.socks);
-            double embarrassment2 = getTotalEmbarrassment(this.socks);
-            
-            this.socks.remove(s);
-            this.socks.add(pairToOffer.second);
-            
-            return (embarrassment1 + embarrassment2) / 2.0;
-        } else {
-            return getMinDistance(s);
-        }
-    }
 
     private double getMinDistance(Sock s) {
         double minDistance = 1000;
@@ -424,13 +401,12 @@ public class Player extends exchange.sim.Player {
                 for (int rank = 1; rank <= 2; ++ rank) {
                     Sock s = offers.get(i).getSock(rank);
                     if (s != null) {
-                        double score =  getSockScore(s);
-                        if (score <= minValSoFar) {
+                        if (getMinDistance(s) <= minValSoFar) {
                             mySecondRequestID = myFirstRequestID;
                             mySecondRequestRank = myFirstRequestRank;
                             myFirstRequestID = i;
                             myFirstRequestRank = rank;
-                            minValSoFar = score;
+                            minValSoFar = getMinDistance(s);
                         }
                     }
                 }
@@ -454,13 +430,12 @@ public class Player extends exchange.sim.Player {
                 for (int rank = 1; rank <= 2; ++ rank) {
                     Sock s = offers.get(player).getSock(rank);
                     if (s != null) {
-                        double score = getSockScore(s);
-                        if (score <= minValSoFar) {
+                        if (getMinDistance(s) <= minValSoFar) {
                             mySecondRequestID = myFirstRequestID;
                             mySecondRequestRank = myFirstRequestRank;
                             myFirstRequestID = player;
                             myFirstRequestRank = rank;
-                            minValSoFar = score;
+                            minValSoFar = getMinDistance(s);
                         }
                     }
                 }
@@ -487,13 +462,12 @@ public class Player extends exchange.sim.Player {
                             if (lastRequestSecondID == i && lastRequestSock2.equals(s)) {
                                 continue;
                             }
-                            double score = getSockScore(s);
-                            if (score <= minValSoFar) {
+                            if (getMinDistance(s) <= minValSoFar) {
                                 mySecondRequestID = myFirstRequestID;
                                 mySecondRequestRank = myFirstRequestRank;
                                 myFirstRequestID = i;
                                 myFirstRequestRank = rank;
-                                minValSoFar = score;
+                                minValSoFar = getMinDistance(s);
                             }
                         }
                     }
