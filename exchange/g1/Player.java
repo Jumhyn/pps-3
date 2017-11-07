@@ -165,13 +165,13 @@ public class Player extends exchange.sim.Player {
         }
     }
 
-    private void printEmbarrasmentAfterSwitch(HashMap<Integer, HashMap<Integer, Double>> E2) {
+    private void printEmbarrassmentAfterSwitch(HashMap<Integer, HashMap<Integer, Double>> E2) {
 
-        System.out.println("Printing Embarrasment after switching socks History for Player " + this.id);
+        System.out.println("Printing Embarrassment after switching socks History for Player " + this.id);
         for (HashMap.Entry<Integer, HashMap<Integer, Double>> player : E2.entrySet()) {
             System.out.println("ID: " + player.getKey());
             for (HashMap.Entry<Integer, Double> sockSwitch: player.getValue().entrySet()) {
-                System.out.println("Sock: " + sockSwitch.getKey() + ", embarrasment: " + sockSwitch.getValue());
+                System.out.println("Sock: " + sockSwitch.getKey() + ", embarrassment: " + sockSwitch.getValue());
             }
         }
 
@@ -232,22 +232,22 @@ public class Player extends exchange.sim.Player {
                     if (firstSock != null && (!tradedSocks.contains(firstSock)) && playerRequest.size() > 0) {
                         Sock Q = playerRequest.get(playerRequest.size()-1);              
                         ArrayList<Sock> result = switchSockAndRepair(firstSock, Q);                  
-                        double embarrasment = getTotalEmbarrassment(result);                    
-                        playerScore.put(1, embarrasment);
+                        double embarrassment = getTotalEmbarrassment(result);                    
+                        playerScore.put(1, embarrassment);
                     }
 
                     // Sock is not null and has not been traded away
                     if (secondSock != null && (!tradedSocks.contains(secondSock))  && playerRequest.size() > 0) {                        
                         Sock Q = playerRequest.get(playerRequest.size()-1); 
                         ArrayList<Sock> result = switchSockAndRepair(secondSock, Q);                  
-                        double embarrasment = getTotalEmbarrassment(result);                    
-                        playerScore.put(2, embarrasment);
+                        double embarrassment = getTotalEmbarrassment(result);                    
+                        playerScore.put(2, embarrassment);
                     }
                     E2.put(j, playerScore);
                 }
             }
         }
-        printEmbarrasmentAfterSwitch(E2);
+        printEmbarrassmentAfterSwitch(E2);
         
         if (turns > 0) {
             
@@ -283,7 +283,7 @@ public class Player extends exchange.sim.Player {
         }
 
         if(tradeCompleted == false) {            
-        	if (!marketHasInterest && turns > 0) {
+        	if (turns > 0 && !marketHasInterest && timesPairOffered % 2 == 1) {
         		// Don't need to reverse the ranking and offer again
         		timesPairOffered += 1;
         	}
@@ -513,7 +513,7 @@ public class Player extends exchange.sim.Player {
     }
     
     
-    // Embarrasment calculation for current list of sockets
+    // Embarrassment calculation for current list of sockets
     private double getTotalEmbarrassment(Sock[] list) {
 
         double result = 0;
@@ -521,7 +521,7 @@ public class Player extends exchange.sim.Player {
             result += list[i].distance(list[i + 1]);
         return result;
     }    
-    // Embarrasment calculation for current list of sockets
+    // Embarrassment calculation for current list of sockets
     private double getTotalEmbarrassment(ArrayList<Sock> list) {
 
         double result = 0;
