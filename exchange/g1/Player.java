@@ -327,9 +327,11 @@ public class Player extends exchange.sim.Player {
         double secondMinValSoFar = 500;
         for (Map.Entry<Pair, Double> entry : E1.entrySet()) {
             if (entry.getValue() < minValSoFar) {
-                second = first;
-                secondMinValSoFar = minValSoFar;
-                first = entry.getKey().first;
+                if (!entry.getKey().first.equals(first)) {
+                    second = first;
+                    secondMinValSoFar = minValSoFar;
+                    first = entry.getKey().first;
+                }
                 minValSoFar = entry.getValue();
             }
             else if (entry.getValue() < secondMinValSoFar) {
@@ -341,9 +343,11 @@ public class Player extends exchange.sim.Player {
 
         for (Map.Entry<Pair, Double> entry : E2.entrySet()) {
             if (entry.getValue() < minValSoFar) {
-                second = first;
-                secondMinValSoFar = minValSoFar;
-                first = entry.getKey().first;
+                if (!entry.getKey().first.equals(first)) {
+                    second = first;
+                    secondMinValSoFar = minValSoFar;
+                    first = entry.getKey().first;
+                }
                 minValSoFar = entry.getValue();
             }
             else if (entry.getValue() < secondMinValSoFar) {
@@ -399,7 +403,6 @@ public class Player extends exchange.sim.Player {
         turns++;
         lastOffer = offers.get(this.id);
         lastoffers = offers;
-        System.out.println(timesPairOffered);
         if (timesPairOffered % 2 == 1) { // First time offering these socks
             minValSoFar = getTotalEmbarrassment(this.socks);
             for (int i = 0; i < offers.size(); ++ i) {
