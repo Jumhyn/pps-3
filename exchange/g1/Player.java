@@ -720,13 +720,7 @@ public class Player extends exchange.sim.Player {
                 }
             }
         }
-        // System.out.println("Time offered: " + timesPairOffered);
-        // System.out.println("Current Em: " + getTotalEmbarrassment(this.socks));
-        // System.out.println("Min val so far: " + minValSoFar);
-        // System.out.println("Second min val: " + secondMinValSoFar); 
-        System.out.println("--> " + myFirstRequestID + " " + myFirstRequestRank + " " + mySecondRequestID + " " + mySecondRequestRank);
-        System.out.println("Turn " + turns);
-        System.out.println("timesPairOffered " + timesPairOffered);
+
         return new Request(myFirstRequestID, myFirstRequestRank, mySecondRequestID, mySecondRequestRank);
     }
 
@@ -759,12 +753,18 @@ public class Player extends exchange.sim.Player {
         socks.remove(oldSock);
         socks.add(newSock);
             
-        if(this.socks.size() <= LARGE_SOCK_THRESHOLD)    {    
+        if(this.socks.size() > LARGE_SOCK_THRESHOLD)    {    
+            // Change priority queue
+            // 
+            // Update distanceWorstSettlePair
+        }
+        else    {
             E1.clear();
+            repair();
+            adjustThreshold();
         }
 
-        repair();
-        adjustThreshold();
+        
         offerIndex = 0;        
     }
 
