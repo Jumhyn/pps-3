@@ -32,7 +32,6 @@ public class Player extends exchange.sim.Player {
     private List<Request> lastRequests;
     private List<Offer> lastoffers;
     private Offer lastOffer;
-    private Pair pairToOffer;
     private boolean marketHasInterest;
     private HashMap<Pair,Double> E1;
     private HashMap<Pair,Double> E2;
@@ -186,17 +185,24 @@ public class Player extends exchange.sim.Player {
     }
 
     private List<Sock> getTradedSocks(List<Transaction> lastTransactions) {
+        // Return socks that we trade away in last round
         List<Sock> res = new ArrayList<Sock>();
         for (Transaction transaction: lastTransactions) {
             if (transaction.getFirstID() == id) {
-                // System.out.println(transaction.getFirstSock() + " gets traded!");
                 res.add(transaction.getFirstSock());
             } else if (transaction.getSecondID() == id) {
-                // System.out.println(transaction.getSecondSock() + " gets traded!");
                 res.add(transaction.getSecondSock());
             }
         }
         return res;
+    }
+
+    private boolean isTraded(List<Transaction> lastTransactions, Sock s) {
+        for (Transaction transaction: lastTransactions) {
+            if (transaction.getFirstSock().equals(s) || transaction.getSecondSock().equals(s))
+                return true;
+        }
+        return false;
     }
 
     private void printRequestHistory(){
@@ -223,31 +229,28 @@ public class Player extends exchange.sim.Player {
     
     @Override
     public Offer makeOffer(List<Request> lastRequests, List<Transaction> lastTransactions) {
-        HashSet<Sock> interestingSocks = new HashSet<Sock>();
         E2 = new HashMap<Pair, Double>();
         List<Sock> tradedSocks = getTradedSocks(lastTransactions);
         this.lastRequests = lastRequests;
 
         if (turns % 2 == 0 && turns > 0 ) { // even round
-            
             for (int j = 0; j < lastRequests.size(); j++) {
                 if (j == this.id) continue;
                 // Player j is not interested in us
                 if (lastRequests.get(j).getFirstID() != this.id && lastRequests.get(j).getSecondID() != this.id)  {
-
                     ArrayList<Sock> playerRequest = playersRequestHistory.get(j);
                     Sock firstSock = lastoffers.get(j).getFirst();
                     Sock secondSock = lastoffers.get(j).getSecond();
 
                     // Sock is not null and has not been traded away
-                    if (firstSock != null && (!tradedSocks.contains(firstSock)) && playerRequest.size() > 0) {
+                    if (firstSock != null && (!isTraded(lastTransactions, firstSock)) && playerRequest.size() > 0) {
                         Sock Q = playerRequest.get(playerRequest.size()-1);              
                         double embarrassment = getTotalEmbarrassment(switchSockAndRepair(firstSock, Q));                    
                         E2.put(new Pair(Q, firstSock), embarrassment);
                     }
 
                     // Sock is not null and has not been traded away
-                    if (secondSock != null && (!tradedSocks.contains(secondSock))  && playerRequest.size() > 0) {                        
+                    if (secondSock != null && (!isTraded(lastTransactions, secondSock))  && playerRequest.size() > 0) {                        
                         Sock Q = playerRequest.get(playerRequest.size()-1); 
                         double embarrassment = getTotalEmbarrassment(switchSockAndRepair(secondSock, Q));                    
                         E2.put(new Pair(Q, secondSock), embarrassment);
@@ -256,11 +259,9 @@ public class Player extends exchange.sim.Player {
                 }
             }
         }
-        // printEmbarrassmentAfterSwitch(E2);
         
-        // Get player history 
+        // Update playerRequestHistory
         if (turns > 0) {
-            
             for (int j = 0; j < lastRequests.size(); j++) {
                 if(j == this.id) continue;
 
@@ -278,23 +279,22 @@ public class Player extends exchange.sim.Player {
             }
         }
 
-        if(pendingPairs.size() == 0) {
+        if (pendingPairs.size() == 0) {
             adjustThreshold();
             offerIndex = 0;
         }
 
-        if(tradeCompleted == false) {
+        if (tradeCompleted == false) {
             if (timesPairOffered >= 4)   {
                 offerIndex = (offerIndex + 2) % pendingPairs.size();
                 timesPairOffered = 0;
             }            
-        }   
-        else {
+        } else {
             timesPairOffered = 0;
             tradeCompleted = false;
         }
         
-        pairToOffer = getPairToOffer(timesPairOffered, offerIndex);
+        Pair pairToOffer = getPairToOffer(timesPairOffered, offerIndex);
         timesPairOffered++;
         return new Offer(pairToOffer.first, pairToOffer.second);
     }
@@ -364,10 +364,6 @@ public class Player extends exchange.sim.Player {
         return new Pair(first, second);
     }
 
-    private Sock getMeanSock(Sock a, Sock b) {
-        return new Sock((a.R + b.R)/2, (a.G + b.G)/2, (a.B + b.B)/2);
-    }
-
     private double getMinDistance(Sock s) {
         double minDistance = 1000;
         for (Pair p: pendingPairs) {
@@ -380,7 +376,7 @@ public class Player extends exchange.sim.Player {
     }
 
     public double scoreForTrade(Sock ours, Sock theirs) {
-        if (n <= 10) {
+        if (n <= 100) {
             return getTotalEmbarrassment(switchSockAndRepair(theirs, ours));
         } else {
             return getMinDistance(theirs);
@@ -415,8 +411,10 @@ public class Player extends exchange.sim.Player {
                 for (int rank = 1; rank <= 2; ++ rank) {
                     Sock s = offers.get(i).getSock(rank);
                     if (s != null) {
-                        Sock[] possibleTrades = {pairToOffer.first, pairToOffer.second};
-                        for (Sock myOffer : possibleTrades) {
+                        Sock[] possibleTrades = {lastOffer.getFirst(), lastOffer.getSecond()};
+                        double minScoreAmongTwo = 100000000;
+                        double maxScoreAmongTwo = -1;
+                        for (Sock myOffer: possibleTrades) {
                             Pair keyPair = new Pair(myOffer, s);
                             double score;
                             if (E1.containsKey(keyPair)) {
@@ -424,19 +422,28 @@ public class Player extends exchange.sim.Player {
                             } else {
                                 score = scoreForTrade(myOffer, s);
                             }
-                            if (score < minValSoFar) {
+                            E1.put(keyPair, score);
+                            minScoreAmongTwo = Math.min(minScoreAmongTwo, score);
+                            maxScoreAmongTwo = Math.max(maxScoreAmongTwo, score);
+                        }
+                        // if (maxScoreAmongTwo > getTotalEmbarrassment(this.socks))
+                        //     continue;
+                        if (minScoreAmongTwo < minValSoFar) {
+                            if (i != myFirstRequestID || rank != myFirstRequestRank) {
                                 mySecondRequestID = myFirstRequestID;
                                 mySecondRequestRank = myFirstRequestRank;
                                 myFirstRequestID = i;
                                 myFirstRequestRank = rank;
-                                minValSoFar = score;
-                            } else if (score < secondMinValSoFar) {
-                                secondMinValSoFar = score;
+                            }
+                            minValSoFar = minScoreAmongTwo;
+                        } else if (minScoreAmongTwo < secondMinValSoFar) {
+                            if (i != myFirstRequestID || rank != myFirstRequestRank) {
+                                secondMinValSoFar = minScoreAmongTwo;
                                 mySecondRequestID = i;
                                 mySecondRequestRank = rank;
                             }
-                            E1.put(keyPair, score);
                         }
+                        // System.out.println("Trade " + s + " : best: " + minScoreAmongTwo + " worst: " + maxScoreAmongTwo);
                     }
                 }
             }
@@ -445,7 +452,7 @@ public class Player extends exchange.sim.Player {
             }
             if (mySecondRequestID != -1){
                 lastRequestSock2 = offers.get(mySecondRequestID).getSock(mySecondRequestRank); // can be null    
-            }    
+            }
         } 
         else { // Second time offering these socks
             for (int i = 0; i < offers.size(); ++ i) {
@@ -453,43 +460,43 @@ public class Player extends exchange.sim.Player {
 
                 for (int rank = 1; rank <= 2; ++ rank) {
                     Sock s = offers.get(i).getSock(rank);
+                    double minScoreAmongTwo = 100000000;
+                    double maxScoreAmongTwo = -1;
                     for (int mySockRank = 1; mySockRank <= 2; ++ mySockRank) {
-                        if (s != null && this.E1.containsKey(new Pair(lastOffer.getSock(mySockRank), s))) {
-                            double minDistance = this.E1.get(new Pair(lastOffer.getSock(mySockRank), s));
-                            if (minDistance <= minValSoFar) {
-                                mySecondRequestID = myFirstRequestID;
-                                mySecondRequestRank = myFirstRequestRank;
-                                secondMinValSoFar = minValSoFar;
-                                myFirstRequestID = i;
-                                myFirstRequestRank = rank;
-                                minValSoFar = minDistance;
-                            } else if (minDistance <= secondMinValSoFar) {
-                                secondMinValSoFar = minDistance;
-                                mySecondRequestID = i;
-                                mySecondRequestRank = rank;
-                            }
+                        Sock myOffer = lastOffer.getSock(mySockRank);
+                        if (s != null && this.E1.containsKey(new Pair(myOffer, s))) {
+                            minScoreAmongTwo = Math.min(minScoreAmongTwo, this.E1.get(new Pair(myOffer, s)));
+                            maxScoreAmongTwo = Math.max(maxScoreAmongTwo, this.E1.get(new Pair(myOffer, s)));
                         }
 
-                        if (s != null && this.E2.containsKey(new Pair(lastOffer.getSock(mySockRank), s))) {
-                            double minDistance = this.E2.get(new Pair(lastOffer.getSock(mySockRank), s));
-                            if (minDistance <= minValSoFar) {
-                                mySecondRequestID = myFirstRequestID;
-                                mySecondRequestRank = myFirstRequestRank;
-                                secondMinValSoFar = minValSoFar;
-                                myFirstRequestID = i;
-                                myFirstRequestRank = rank;
-                                minValSoFar = minDistance;
-                            } else if (minDistance <= secondMinValSoFar) {
-                                secondMinValSoFar = minDistance;
-                                mySecondRequestID = i;
-                                mySecondRequestRank = rank;
-                            }
+                        if (s != null && this.E2.containsKey(new Pair(myOffer, s))) {
+                            minScoreAmongTwo = Math.min(minScoreAmongTwo, this.E2.get(new Pair(myOffer, s)));
+                            maxScoreAmongTwo = Math.max(maxScoreAmongTwo, this.E2.get(new Pair(myOffer, s)));
                         }
                     }
+                    // if (maxScoreAmongTwo > getTotalEmbarrassment(this.socks))
+                    //     continue;
+
+                    if (minScoreAmongTwo <= minValSoFar) {
+                        if (i != myFirstRequestID || rank != myFirstRequestRank) {
+                            mySecondRequestID = myFirstRequestID;
+                            mySecondRequestRank = myFirstRequestRank;
+                            myFirstRequestID = i;
+                            myFirstRequestRank = rank;
+                        }
+                        minValSoFar = minScoreAmongTwo;
+
+                    } else if (minScoreAmongTwo <= secondMinValSoFar) {
+                        if (i != myFirstRequestID || rank != myFirstRequestRank) {
+                            secondMinValSoFar = minScoreAmongTwo;
+                            mySecondRequestID = i;
+                            mySecondRequestRank = rank;
+                        }
+                    }
+                    // System.out.println("Trade " + s + " : best: " + minScoreAmongTwo + " worst: " + maxScoreAmongTwo);
                 }
             }
             if (myFirstRequestID == -1) {
-                System.out.println("Here!");
                 // do the same thing on all offers
                 // but exclude requested ones
                 minValSoFar = getTotalEmbarrassment(this.socks);
@@ -511,33 +518,45 @@ public class Player extends exchange.sim.Player {
                             if (lastRequestSecondID == i && lastRequestSock2.equals(s)) {
                                 continue;
                             }
-                            Sock[] possibleTrades = {pairToOffer.first, pairToOffer.second};
-                            double minDistance = getTotalEmbarrassment(this.socks);
-                            for (Sock myOffer : possibleTrades) {
-                                minDistance = scoreForTrade(myOffer, s);
+                            Sock[] possibleTrades = {lastOffer.getFirst(), lastOffer.getSecond()};
+                            double minScoreAmongTwo = 100000000;
+                            double maxScoreAmongTwo = -1;
+                            for (Sock myOffer: possibleTrades) {
+                                Pair keyPair = new Pair(myOffer, s);
+                                double score;
+                                score = scoreForTrade(myOffer, s);
+                                minScoreAmongTwo = Math.min(minScoreAmongTwo, score);
+                                maxScoreAmongTwo = Math.max(maxScoreAmongTwo, score);
                             }
-                            if (minDistance <= minValSoFar) {
-                                mySecondRequestID = myFirstRequestID;
-                                mySecondRequestRank = myFirstRequestRank;
-                                secondMinValSoFar = minValSoFar;
-                                myFirstRequestID = i;
-                                myFirstRequestRank = rank;
-                                minValSoFar = minDistance;
-                            } else if (minDistance <= secondMinValSoFar) {
-                                secondMinValSoFar = minDistance;
-                                mySecondRequestID = i;
-                                mySecondRequestRank = rank;
+                            // if (maxScoreAmongTwo > getTotalEmbarrassment(this.socks))
+                            //     continue;
+                            if (minScoreAmongTwo < minValSoFar) {
+                                if (i != myFirstRequestID || rank != myFirstRequestRank) {
+                                    mySecondRequestID = myFirstRequestID;
+                                    mySecondRequestRank = myFirstRequestRank;
+                                    myFirstRequestID = i;
+                                    myFirstRequestRank = rank;
+                                }
+                                minValSoFar = minScoreAmongTwo;
+                            } else if (minScoreAmongTwo < secondMinValSoFar) {
+                                if (i != myFirstRequestID || rank != myFirstRequestRank) {
+                                    secondMinValSoFar = minScoreAmongTwo;
+                                    mySecondRequestID = i;
+                                    mySecondRequestRank = rank;
+                                }
                             }
+                            // System.out.println("Trade " + s + " : best: " + minScoreAmongTwo + " worst: " + maxScoreAmongTwo);
                         }
                     }
                 }
             }
         }
-
-        System.out.println("Time offered: " + timesPairOffered);
-        System.out.println("Current Em: " + getTotalEmbarrassment(this.socks));
-        System.out.println("Min val so far: " + minValSoFar);
-        System.out.println("Second min val: " + secondMinValSoFar); 
+        // System.out.println("Time offered: " + timesPairOffered);
+        // System.out.println("Current Em: " + getTotalEmbarrassment(this.socks));
+        // System.out.println("Min val so far: " + minValSoFar);
+        // System.out.println("By asking for: " + myFirstRequestID + "(" + myFirstRequestRank + ")");
+        // System.out.println("Second min val: " + secondMinValSoFar); 
+        // System.out.println("By asking for: " + mySecondRequestID + "(" + mySecondRequestRank + ")");
         return new Request(myFirstRequestID, myFirstRequestRank, mySecondRequestID, mySecondRequestRank);
     }
 
