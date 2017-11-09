@@ -360,7 +360,7 @@ public class Player extends exchange.sim.Player {
                 }
             }
         }
-
+        // return new Pair(first, null);
         return new Pair(first, second);
     }
 
@@ -415,6 +415,8 @@ public class Player extends exchange.sim.Player {
                         double minScoreAmongTwo = 100000000;
                         double maxScoreAmongTwo = -1;
                         for (Sock myOffer: possibleTrades) {
+                            if (myOffer == null)
+                                continue;
                             Pair keyPair = new Pair(myOffer, s);
                             double score;
                             if (E1.containsKey(keyPair)) {
@@ -464,12 +466,12 @@ public class Player extends exchange.sim.Player {
                     double maxScoreAmongTwo = -1;
                     for (int mySockRank = 1; mySockRank <= 2; ++ mySockRank) {
                         Sock myOffer = lastOffer.getSock(mySockRank);
-                        if (s != null && this.E1.containsKey(new Pair(myOffer, s))) {
+                        if (s != null && myOffer != null && this.E1.containsKey(new Pair(myOffer, s))) {
                             minScoreAmongTwo = Math.min(minScoreAmongTwo, this.E1.get(new Pair(myOffer, s)));
                             maxScoreAmongTwo = Math.max(maxScoreAmongTwo, this.E1.get(new Pair(myOffer, s)));
                         }
 
-                        if (s != null && this.E2.containsKey(new Pair(myOffer, s))) {
+                        if (s != null && myOffer != null && this.E2.containsKey(new Pair(myOffer, s))) {
                             minScoreAmongTwo = Math.min(minScoreAmongTwo, this.E2.get(new Pair(myOffer, s)));
                             maxScoreAmongTwo = Math.max(maxScoreAmongTwo, this.E2.get(new Pair(myOffer, s)));
                         }
@@ -522,6 +524,8 @@ public class Player extends exchange.sim.Player {
                             double minScoreAmongTwo = 100000000;
                             double maxScoreAmongTwo = -1;
                             for (Sock myOffer: possibleTrades) {
+                                if (myOffer == null)
+                                    continue;
                                 Pair keyPair = new Pair(myOffer, s);
                                 double score;
                                 score = scoreForTrade(myOffer, s);
