@@ -10,17 +10,26 @@ import exchange.sim.Multiset;
 
 public class Tester {
     public static void main(String[] args) {
-        for (int n = 1000; n <= 1000; n += 10) {
-            double totalAverageDistance = 0.0;
-            long totalRuntime = 0;
-            for (int i = 0; i < 100; i++) {
-                totalAverageDistance += testAverageDistance(n);
-                totalRuntime += testRuntime(n);
-            }
-            double averageAverageDistance = totalAverageDistance / 100;
-            double averageRuntime = ((double)totalRuntime) / 100;
-            System.out.println(n + "\t" + averageAverageDistance + "\t" + averageRuntime);
+        int iterations = 10;
+        double total = 0.0;
+        double total2 = 0.0;
+        for (int i = 0; i < iterations; i++) {
+            total += testRuntime(1000);
+            total2 += testAverageDistance(1000);
+            System.out.println(i + "\t" + total / (i + 1) + "\t" + total2 / (i + 1));
         }
+        System.out.println(total / iterations +  "\t" + total2 / iterations);
+    }
+    
+    
+    public static ArrayList<Sock> getSocks(int n) {
+        ArrayList<Sock> socks = new ArrayList<Sock>();
+        Random random = new Random();
+        for (int i = 0; i < 2 * n; ++i) {
+            Sock sock = new Sock(random.nextInt(256), random.nextInt(256), random.nextInt(256));
+            socks.add(sock);
+        }
+        return socks;
     }
     
     public static long testRuntime(int n) {
@@ -31,7 +40,7 @@ public class Tester {
             socks.add(sock);
         }
         long start = System.currentTimeMillis();
-        greedyPair(socks);
+        hybridPair(socks, (int) 0.6 * n);
         long elapsed = System.currentTimeMillis() - start;
         return elapsed;
     }
@@ -43,12 +52,35 @@ public class Tester {
             Sock sock = new Sock(random.nextInt(256), random.nextInt(256), random.nextInt(256));
             socks.add(sock);
         }
-        greedyPair(socks);
+        hybridPair(socks, (int) 0.6 * n);
         double totalDistance = 0.0;
         for (int i = 0; i < 2 * n - 1; i += 2) {
             totalDistance += socks.get(i).distance(socks.get(i + 1));
         }
         return totalDistance / n;
+    }
+    
+    public static void hybridPair(List<Sock> sockList, int numToBlossom) {
+        ArrayList<Sock> pairedList = new ArrayList<Sock>();
+        while (sockList.size() > numToBlossom) {
+            double minDistance = 500.0;
+            int minIndex1 = -1;
+            int minIndex2 = -1;
+            for (int i = 0; i < sockList.size(); i++) {
+                for (int j = i + 1; j < sockList.size(); j++) {
+                    double distance = sockList.get(i).distance(sockList.get(j));
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        minIndex1 = i;
+                        minIndex2 = j;
+                    }
+                }
+            }
+            pairedList.add(sockList.remove(minIndex2));
+            pairedList.add(sockList.remove(minIndex1));
+        }
+        pair(sockList);
+        sockList.addAll(pairedList);
     }
     
     public static void pair(List<Sock> socks) {
@@ -74,10 +106,10 @@ public class Tester {
     public static void greedyPair(ArrayList<Sock> sockList) {
         ArrayList<Sock> pairedList = new ArrayList<Sock>();
         while (sockList.size() > 0) {
-            if (sockList.size() < 100) {
-                pair(sockList);
-                break;
-            }
+//            if (sockList.size() < 100) {
+//                pair(sockList);
+//                break;
+//            }
             Sock toPair = sockList.remove(sockList.size() - 1);
             double minDistance = toPair.distance(sockList.get(0));
             int minIndex = 0;
@@ -90,6 +122,28 @@ public class Tester {
             }
             pairedList.add(sockList.remove(minIndex));
             pairedList.add(toPair);
+        }
+        sockList.addAll(pairedList);
+    }
+    
+    public static void greedyPair2(ArrayList<Sock> sockList) {
+        ArrayList<Sock> pairedList = new ArrayList<Sock>();
+        while (sockList.size() > 0) {
+            double minDistance = 500.0;
+            int minIndex1 = -1;
+            int minIndex2 = -1;
+            for (int i = 0; i < sockList.size(); i++) {
+                for (int j = i + 1; j < sockList.size(); j++) {
+                    double distance = sockList.get(i).distance(sockList.get(j));
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        minIndex1 = i;
+                        minIndex2 = j;
+                    }
+                }
+            }
+            pairedList.add(sockList.remove(minIndex2));
+            pairedList.add(sockList.remove(minIndex1));
         }
         sockList.addAll(pairedList);
     }
