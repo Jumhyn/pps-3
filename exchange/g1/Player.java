@@ -323,8 +323,9 @@ public class Player extends exchange.sim.Player {
         // and offer the sock that may solicit those transations.
         Sock first = this.pendingPairs.get(0).first;
         Sock second = this.pendingPairs.get(0).second;
-        double minValSoFar = 500;
-        double secondMinValSoFar = 500;
+
+        double minValSoFar = getTotalEmbarrassment(this.socks);
+        double secondMinValSoFar = getTotalEmbarrassment(this.socks);
         for (Map.Entry<Pair, Double> entry : E1.entrySet()) {
             if (entry.getValue() < minValSoFar) {
                 if (!entry.getKey().first.equals(first)) {
@@ -397,8 +398,8 @@ public class Player extends exchange.sim.Player {
 
             Remark: For Request object, rank ranges between 1 and 2
          */
-        double minValSoFar = 1000 * this.n;
-        double secondMinValSoFar = 1000;
+        double minValSoFar = getTotalEmbarrassment(this.socks);
+        double secondMinValSoFar = getTotalEmbarrassment(this.socks);
         myFirstRequestID = -1;
         myFirstRequestRank = -1;
         mySecondRequestID = -1;
@@ -408,7 +409,6 @@ public class Player extends exchange.sim.Player {
         lastOffer = offers.get(this.id);
         lastoffers = offers;
         if (timesPairOffered % 2 == 1) { // First time offering these socks
-            minValSoFar = getTotalEmbarrassment(this.socks);
             for (int i = 0; i < offers.size(); ++ i) {
                 if (i == id) continue;
 
@@ -429,7 +429,7 @@ public class Player extends exchange.sim.Player {
                                 mySecondRequestRank = myFirstRequestRank;
                                 myFirstRequestID = i;
                                 myFirstRequestRank = rank;
-                                minValSoFar = getMinDistance(s);
+                                minValSoFar = score;
                             } else if (score < secondMinValSoFar) {
                                 secondMinValSoFar = score;
                                 mySecondRequestID = i;
@@ -489,10 +489,11 @@ public class Player extends exchange.sim.Player {
                 }
             }
             if (myFirstRequestID == -1) {
+                System.out.println("Here!");
                 // do the same thing on all offers
                 // but exclude requested ones
-                minValSoFar = 1000;
-                secondMinValSoFar = 1000;
+                minValSoFar = getTotalEmbarrassment(this.socks);
+                secondMinValSoFar = getTotalEmbarrassment(this.socks);
                 myFirstRequestID = -1;
                 myFirstRequestRank = -1;
                 mySecondRequestID = -1;
@@ -510,7 +511,11 @@ public class Player extends exchange.sim.Player {
                             if (lastRequestSecondID == i && lastRequestSock2.equals(s)) {
                                 continue;
                             }
-                            double minDistance = getMinDistance(s);
+                            Sock[] possibleTrades = {pairToOffer.first, pairToOffer.second};
+                            double minDistance = getTotalEmbarrassment(this.socks);
+                            for (Sock myOffer : possibleTrades) {
+                                minDistance = scoreForTrade(myOffer, s);
+                            }
                             if (minDistance <= minValSoFar) {
                                 mySecondRequestID = myFirstRequestID;
                                 mySecondRequestRank = myFirstRequestRank;
@@ -528,6 +533,11 @@ public class Player extends exchange.sim.Player {
                 }
             }
         }
+
+        System.out.println("Time offered: " + timesPairOffered);
+        System.out.println("Current Em: " + getTotalEmbarrassment(this.socks));
+        System.out.println("Min val so far: " + minValSoFar);
+        System.out.println("Second min val: " + secondMinValSoFar); 
         return new Request(myFirstRequestID, myFirstRequestRank, mySecondRequestID, mySecondRequestRank);
     }
 
