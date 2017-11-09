@@ -55,7 +55,7 @@ public class Player extends exchange.sim.Player {
     }
 
     public double threshold;
-    public double distanceWorstPair;
+    public double distanceWorstSettlePair;
     
     public ArrayList<Sock> socks;
     public ArrayList<Pair> settledPairs;
@@ -169,7 +169,6 @@ public class Player extends exchange.sim.Player {
             };
             Collections.sort(this.settledPairs, comp);
 
-            System.out.println("Settlep pairs size: " + this.settledPairs.size());
             Pair partitionPair = this.settledPairs.get(n / 5);
             if (this.settledPairs.size() > LARGE_SOCK_THRESHOLD) {                
                 partitionPair = this.settledPairs.get(600);
@@ -177,7 +176,7 @@ public class Player extends exchange.sim.Player {
             this.threshold = partitionPair.first.distance(partitionPair.second);
 
             Pair worstPair = this.settledPairs.get(0);
-            this.distanceWorstPair = worstPair.first.distance(worstPair.second);
+            this.distanceWorstSettlePair = worstPair.first.distance(worstPair.second);
         }
     }
     
@@ -269,14 +268,15 @@ public class Player extends exchange.sim.Player {
 
         if(this.socks.size() > LARGE_SOCK_THRESHOLD)    {
 
-             if (turns > 0) {
+            this.playersInterestedInUs.clear();
+            if (turns > 0) {
                 
                 for (int j = 0; j < lastRequests.size(); j++) {
                     if(j == this.id) continue;
                     
                     // If a player is interested in us
                     if (lastRequests.get(j).getFirstID() == this.id) {
-                        this.id;
+                        this.playersInterestedInUs.add(this.id);
                     }
                 }
             }
@@ -303,7 +303,6 @@ public class Player extends exchange.sim.Player {
                 s1 = pendingPairs.get(offerIndex).first;
                 s2 = pendingPairs.get(offerIndex + 1).second;
             }
-            
             pairToOffer = new Pair(s1, s2);
         }
         else    {
@@ -496,6 +495,7 @@ public class Player extends exchange.sim.Player {
         if(this.socks.size() > LARGE_SOCK_THRESHOLD)    {
 
             if (timesPairOffered % 2 == 1) { // First time offering these socks
+
                 for (int i = 0; i < offers.size(); ++ i) {
                     if (i == id) continue;
 
@@ -505,59 +505,94 @@ public class Player extends exchange.sim.Player {
                         if (s != null) {
                             for(Pair pendingPair : pendingPairs)   {
 
-                                double pairDistance = pendingPair.first.distance(pendingPair.secondSock);
-                                double minDistance = min(scoreForTrade(s, pendingPair.first), scoreForTrade(s, pendingPair.second));
+                                double pairDistance = pendingPair.first.distance(pendingPair.second);
+                                double minDistance = Math.min(scoreForTrade(s, pendingPair.first), scoreForTrade(s, pendingPair.second));
 
-                                if (score > minDistance && this.distanceWorstPair > minDistance && minValSoFar > minDistance)  {
-                                    mySecondRequestID = myFirstRequestID;
-                                    mySecondRequestRank = myFirstRequestRank;
-                                    myFirstRequestID = i;
-                                    myFirstRequestRank = rank;
-                                    minValSoFar = score;
-                                } else if (score > minDistance && this.distanceWorstPair > minDistance) {
-                                    secondMinValSoFar = score;
-                                    mySecondRequestID = i;
-                                    mySecondRequestRank = rank;
-                                }
+                                if(pairDistance > minDistance && this.distanceWorstSettlePair > minDistance)   {
+                                    if (minValSoFar > minDistance)  {
+                                        mySecondRequestID = myFirstRequestID;
+                                        mySecondRequestRank = myFirstRequestRank;
+                                        myFirstRequestID = i;
+                                        myFirstRequestRank = rank;
+                                        minValSoFar = minDistance;
+                                    } else if (secondMinValSoFar > minDistance) {
+                                        secondMinValSoFar = minDistance;
+                                        mySecondRequestID = i;
+                                        mySecondRequestRank = rank;
+                                    }
+                                }                                
                             }
                         }
                     }
                 }
             }
             else { // Second time offering these socks
-            
-                for(Integer playerId: this.playersInterestedInUs)   {
 
+                for(Integer i: this.playersInterestedInUs)   {
+                    if (i == id) continue;
+                    
                     for (int rank = 1; rank <= 2; ++ rank) {
                         Sock s = offers.get(i).getSock(rank);
                         
                         if (s != null) {
                             for(Pair pendingPair : pendingPairs)   {
 
-                                double pairDistance = pendingPair.first.distance(pendingPair.secondSock);
-                                double minDistance = min(scoreForTrade(s, pendingPair.first), scoreForTrade(s, pendingPair.second));
+                                double pairDistance = pendingPair.first.distance(pendingPair.second);
+                                double minDistance = Math.min(scoreForTrade(s, pendingPair.first), scoreForTrade(s, pendingPair.second));
 
-                                if (score > minDistance && this.distanceWorstPair > minDistance && minValSoFar > minDistance)  {
-                                    mySecondRequestID = myFirstRequestID;
-                                    mySecondRequestRank = myFirstRequestRank;
-                                    myFirstRequestID = i;
-                                    myFirstRequestRank = rank;
-                                    minValSoFar = score;
-                                } else if (score > minDistance && this.distanceWorstPair > minDistance) {
-                                    secondMinValSoFar = score;
-                                    mySecondRequestID = i;
-                                    mySecondRequestRank = rank;
+                                if(pairDistance > minDistance && this.distanceWorstSettlePair > minDistance)   {
+                                    if (minValSoFar > minDistance && (myFirstRequestID!=i || myFirstRequestRank!=rank))  {
+                                        mySecondRequestID = myFirstRequestID;
+                                        mySecondRequestRank = myFirstRequestRank;
+                                        myFirstRequestID = i;
+                                        myFirstRequestRank = rank;
+                                        minValSoFar = minDistance;
+                                    } else if (secondMinValSoFar > minDistance) {
+                                        secondMinValSoFar = minDistance;
+                                        mySecondRequestID = i;
+                                        mySecondRequestRank = rank;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // We consider the rest of the socks if we haven't found socks that interest us
+                if(mySecondRequestID == -1)   {
+
+                    for (int i = 0; i < offers.size(); ++ i) {
+                        if (i == id || this.playersInterestedInUs.contains(i)) continue;
+
+                        for (int rank = 1; rank <= 2; ++ rank) {
+                            Sock s = offers.get(i).getSock(rank);
+                            
+                            if (s != null) {
+                                for(Pair pendingPair : pendingPairs)   {
+
+                                    double pairDistance = pendingPair.first.distance(pendingPair.second);
+                                    double minDistance = Math.min(scoreForTrade(s, pendingPair.first), scoreForTrade(s, pendingPair.second));
+
+                                    if(pairDistance > minDistance && this.distanceWorstSettlePair > minDistance)   {
+                                        if (minValSoFar > minDistance && (myFirstRequestID!=i || myFirstRequestRank!=rank))  {
+                                            mySecondRequestID = myFirstRequestID;
+                                            mySecondRequestRank = myFirstRequestRank;
+                                            myFirstRequestID = i;
+                                            myFirstRequestRank = rank;
+                                            minValSoFar = minDistance;
+                                        } else if (secondMinValSoFar > minDistance) {
+                                            secondMinValSoFar = minDistance;
+                                            mySecondRequestID = i;
+                                            mySecondRequestRank = rank;
+                                        }
+                                    }                                
                                 }
                             }
                         }
                     }
                 }
             }
-          
         }
         else    {
-
-
             if (timesPairOffered % 2 == 1) { // First time offering these socks
                 for (int i = 0; i < offers.size(); ++ i) {
                     if (i == id) continue;
@@ -689,6 +724,9 @@ public class Player extends exchange.sim.Player {
         // System.out.println("Current Em: " + getTotalEmbarrassment(this.socks));
         // System.out.println("Min val so far: " + minValSoFar);
         // System.out.println("Second min val: " + secondMinValSoFar); 
+        System.out.println("--> " + myFirstRequestID + " " + myFirstRequestRank + " " + mySecondRequestID + " " + mySecondRequestRank);
+        System.out.println("Turn " + turns);
+        System.out.println("timesPairOffered " + timesPairOffered);
         return new Request(myFirstRequestID, myFirstRequestRank, mySecondRequestID, mySecondRequestRank);
     }
 
@@ -721,10 +759,12 @@ public class Player extends exchange.sim.Player {
         socks.remove(oldSock);
         socks.add(newSock);
             
-        repair();    
-        E1.clear();
+        if(this.socks.size() <= LARGE_SOCK_THRESHOLD)    {    
+            E1.clear();
+        }
+
+        repair();
         adjustThreshold();
-        
         offerIndex = 0;        
     }
 
