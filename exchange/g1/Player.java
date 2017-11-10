@@ -312,7 +312,6 @@ public class Player extends exchange.sim.Player {
         }
         else    {
 
-            HashSet<Sock> interestingSocks = new HashSet<Sock>();
             E2 = new HashMap<Pair, Double>();
             List<Sock> tradedSocks = getTradedSocks(lastTransactions);
 
