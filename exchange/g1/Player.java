@@ -514,16 +514,21 @@ public class Player extends exchange.sim.Player {
                                 double minDistance = Math.min(scoreForTrade(s, pendingPair.first), scoreForTrade(s, pendingPair.second));
 
                                 if(pairDistance > minDistance && this.distanceWorstSettlePair > minDistance)   {
-                                    if (minValSoFar > minDistance)  {
-                                        mySecondRequestID = myFirstRequestID;
-                                        mySecondRequestRank = myFirstRequestRank;
+                                    if (minValSoFar >= minDistance)  {
+                                        if((myFirstRequestID!=i || myFirstRequestRank!=rank))   {
+                                            mySecondRequestID = myFirstRequestID;
+                                            mySecondRequestRank = myFirstRequestRank;    
+                                            secondMinValSoFar = minValSoFar;
+                                        }                                        
                                         myFirstRequestID = i;
                                         myFirstRequestRank = rank;
                                         minValSoFar = minDistance;
-                                    } else if (secondMinValSoFar > minDistance) {
-                                        secondMinValSoFar = minDistance;
-                                        mySecondRequestID = i;
-                                        mySecondRequestRank = rank;
+                                    } else if (secondMinValSoFar >= minDistance) {
+                                        if((myFirstRequestID!=i || myFirstRequestRank!=rank))   {
+                                            secondMinValSoFar = minDistance;
+                                            mySecondRequestID = i;
+                                            mySecondRequestRank = rank;
+                                        }
                                     }
                                 }                                
                             }
@@ -546,18 +551,23 @@ public class Player extends exchange.sim.Player {
                                 double minDistance = Math.min(scoreForTrade(s, pendingPair.first), scoreForTrade(s, pendingPair.second));
 
                                 if(pairDistance > minDistance && this.distanceWorstSettlePair > minDistance)   {
-                                    if (minValSoFar > minDistance && (myFirstRequestID!=i || myFirstRequestRank!=rank))  {
-                                        mySecondRequestID = myFirstRequestID;
-                                        mySecondRequestRank = myFirstRequestRank;
+                                    if (minValSoFar >= minDistance)  {
+                                        if((myFirstRequestID!=i || myFirstRequestRank!=rank))   {
+                                            mySecondRequestID = myFirstRequestID;
+                                            mySecondRequestRank = myFirstRequestRank;    
+                                            secondMinValSoFar = minValSoFar;
+                                        }                                        
                                         myFirstRequestID = i;
                                         myFirstRequestRank = rank;
                                         minValSoFar = minDistance;
-                                    } else if (secondMinValSoFar > minDistance) {
-                                        secondMinValSoFar = minDistance;
-                                        mySecondRequestID = i;
-                                        mySecondRequestRank = rank;
+                                    } else if (secondMinValSoFar >= minDistance) {
+                                        if((myFirstRequestID!=i || myFirstRequestRank!=rank))   {
+                                            secondMinValSoFar = minDistance;
+                                            mySecondRequestID = i;
+                                            mySecondRequestRank = rank;
+                                        }
                                     }
-                                }
+                                }               
                             }
                         }
                     }
@@ -577,19 +587,25 @@ public class Player extends exchange.sim.Player {
                                     double pairDistance = pendingPair.first.distance(pendingPair.second);
                                     double minDistance = Math.min(scoreForTrade(s, pendingPair.first), scoreForTrade(s, pendingPair.second));
 
+
                                     if(pairDistance > minDistance && this.distanceWorstSettlePair > minDistance)   {
-                                        if (minValSoFar > minDistance && (myFirstRequestID!=i || myFirstRequestRank!=rank))  {
-                                            mySecondRequestID = myFirstRequestID;
-                                            mySecondRequestRank = myFirstRequestRank;
+                                        if (minValSoFar >= minDistance)  {
+                                            if((myFirstRequestID!=i || myFirstRequestRank!=rank))   {
+                                                mySecondRequestID = myFirstRequestID;
+                                                mySecondRequestRank = myFirstRequestRank;    
+                                                secondMinValSoFar = minValSoFar;
+                                            }                                        
                                             myFirstRequestID = i;
                                             myFirstRequestRank = rank;
                                             minValSoFar = minDistance;
-                                        } else if (secondMinValSoFar > minDistance) {
-                                            secondMinValSoFar = minDistance;
-                                            mySecondRequestID = i;
-                                            mySecondRequestRank = rank;
+                                        } else if (secondMinValSoFar >= minDistance) {
+                                            if((myFirstRequestID!=i || myFirstRequestRank!=rank))   {
+                                                secondMinValSoFar = minDistance;
+                                                mySecondRequestID = i;
+                                                mySecondRequestRank = rank;
+                                            }
                                         }
-                                    }                                
+                                    }                                         
                                 }
                             }
                         }
