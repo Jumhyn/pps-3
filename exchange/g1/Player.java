@@ -130,6 +130,73 @@ public class Player extends exchange.sim.Player {
         }
         if (rank == 1) socks[myFirstOffer] = newSock;
         else socks[mySecondOffer] = newSock;
+
+        // Remove oldSock from history list
+        // We can't offer it anymore
+        for (List<Sock> value : playersRequestHistory.values()) {
+            while (value.remove(oldSock)) {}
+        }   
+        socks.remove(oldSock);
+        socks.add(newSock);
+            
+        if(this.socks.size() > LARGE_SOCK_THRESHOLD) {    
+            // Change priority queue
+            // Update distanceWorstSettlePair
+
+            Pair oldP = null;
+            for (Pair p: pendingPairs) {
+                if (p.first.equals(oldSock) || p.second.equals(oldSock)) {
+                    oldP = p;
+                    break;
+                }
+            }
+            if (oldP != null) {
+                pendingPairs.remove(oldP);
+            }
+            
+            if (oldP.first.equals(oldSock)) {
+                oldP.first = newSock;
+            } else if (oldP.second.equals(oldSock)) {
+                oldP.second = newSock;
+            }
+            
+            if(newSock.equals(this.lastSockToTradeP1) || newSock.equals(this.lastSockToTradeQ1))    {
+                double distanceP = this.lastSockToTradeP1.distance(newSock);
+                double distanceQ = this.lastSockToTradeQ1.distance(newSock);
+                if(distanceP < distanceQ)   {
+
+                }
+                else {
+
+                }
+            }
+            else    {
+                double distanceP = this.lastSockToTradeP2.distance(newSock);
+                double distanceQ = this.lastSockToTradeQ2.distance(newSock);
+                if(distanceP < distanceQ)   {
+
+                }
+                else {
+
+                }
+            }
+
+            /*************/
+            settledPairs.add(oldP);
+            Pair newP = settledPairs.peek();          
+            pendingPairs.add(newP);
+            
+            Pair worstPair = this.settledPairs.peek();
+            this.distanceWorstSettlePair = worstPair.first.distance(worstPair.second);
+        }
+        else    {
+            E1.clear();
+            repair();
+            adjustThreshold();
+        }
+
+        
+        offerIndex = 0;        
     }
 
     @Override
