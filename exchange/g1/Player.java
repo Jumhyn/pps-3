@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Queue;
+import java.util.PriorityQueue;
 
 import exchange.sim.Offer;
 import exchange.sim.Request;
@@ -58,8 +60,9 @@ public class Player extends exchange.sim.Player {
     public double distanceWorstSettlePair;
     
     public ArrayList<Sock> socks;
-    public ArrayList<Pair> settledPairs;
-    public ArrayList<Pair> pendingPairs;
+    public Queue<Pair> settledPairs;
+    public Queue<Pair> pendingPairs;
+    public ArrayList<Pair> pendingPairsList;
 
     public int offerIndex;
     public boolean tradeCompleted;
@@ -76,6 +79,7 @@ public class Player extends exchange.sim.Player {
             this.settledPairs.add(new Pair(this.socks.get(i), this.socks.get(i + 1)));
         }
         this.pendingPairs.clear();
+        this.pendingPairsList.clear();
     }
     
     public void pair(List<Sock> sockList) {
@@ -88,7 +92,6 @@ public class Player extends exchange.sim.Player {
     }
     
     public void shouldRepair()  {
-
         if((this.turns > 0) && 
             ((this.turns % 25 == 0) || (this.pendingPairs.size() < MIN_PENDING_THRESHOLD))) {
             repair();
@@ -157,25 +160,26 @@ public class Player extends exchange.sim.Player {
                 break;
             }
         }
-        this.settledPairs.removeAll(this.pendingPairs);
+
+        for (Pair p: this.pendingPairs) {
+            this.settledPairs.remove(p);
+        }
+
+        this.pendingPairsList = new ArrayList<>(this.pendingPairs);
     }
     
     private void chooseNewThreshold() {
         if (USE_ABS_THRESHOLD) {
             this.threshold = this.threshold * ABS_THRESHOLD_FRAC;
         } else {
-            Comparator<Pair> comp = (Pair a, Pair b) -> {
-                return (new Double(b.first.distance(b.second))).compareTo(a.first.distance(a.second));
-            };
-            Collections.sort(this.settledPairs, comp);
-
-            Pair partitionPair = this.settledPairs.get(n / 5);
+            Pair[] settledPairsArr = (Pair[]) this.settledPairs.toArray();
+            Pair partitionPair = settledPairsArr[n/5];
             if (this.settledPairs.size() > LARGE_SOCK_THRESHOLD) {                
-                partitionPair = this.settledPairs.get(600);
+                partitionPair = settledPairsArr[600];
             }
             this.threshold = partitionPair.first.distance(partitionPair.second);
 
-            Pair worstPair = this.settledPairs.get(0);
+            Pair worstPair = this.settledPairs.peek();
             this.distanceWorstSettlePair = worstPair.first.distance(worstPair.second);
         }
     }
@@ -201,11 +205,13 @@ public class Player extends exchange.sim.Player {
         this.t = t;
         this.turns = 0;
         this.socks = new ArrayList<Sock>(socks);
-        this.settledPairs = new ArrayList<>();
-        this.pendingPairs = new ArrayList<>();
-        for (int i = 0; i < socks.size() - 1; i += 2) {
-            this.settledPairs.add(new Pair(socks.get(i), socks.get(i + 1)));
-        }
+        // decreasing embarassment orderig
+        Comparator<Pair> comp = (Pair a, Pair b) -> {
+            return (new Double(b.first.distance(b.second))).compareTo(a.first.distance(a.second));
+        };
+        this.settledPairs = new PriorityQueue<>(n*2, comp);
+        this.pendingPairs = new PriorityQueue<>(n*2, comp);
+        this.pendingPairsList = new ArrayList<>();
         this.repair();
         if (USE_ABS_THRESHOLD) {
             this.threshold = 60.0;
@@ -251,7 +257,6 @@ public class Player extends exchange.sim.Player {
     }
 
     private void printEmbarrassmentAfterSwitch(HashMap<Integer, HashMap<Integer, Double>> E2) {
-
         System.out.println("Printing Embarrassment after switching socks History for Player " + this.id);
         for (HashMap.Entry<Integer, HashMap<Integer, Double>> player : E2.entrySet()) {
             System.out.println("ID: " + player.getKey());
@@ -281,7 +286,7 @@ public class Player extends exchange.sim.Player {
                 }
             }
 
-            if(tradeCompleted == false) {
+            if (tradeCompleted == false) {
                 if (timesPairOffered >= 2)   {
                     offerIndex = (offerIndex + 2) % pendingPairs.size();
                     timesPairOffered = 0;
@@ -296,12 +301,12 @@ public class Player extends exchange.sim.Player {
             Sock s2 = null;
 
             if(timesPairOffered == 0)   {
-                s1 = pendingPairs.get(offerIndex).first;
-                s2 = pendingPairs.get(offerIndex + 1).second;
+                s1 = pendingPairsList.get(offerIndex).first;
+                s2 = pendingPairsList.get(offerIndex+1).second;
             }
             else    {
-                s1 = pendingPairs.get(offerIndex).first;
-                s2 = pendingPairs.get(offerIndex + 1).second;
+                s1 = pendingPairsList.get(offerIndex).first;
+                s2 = pendingPairsList.get(offerIndex+1).second;
             }
             pairToOffer = new Pair(s1, s2);
         }
@@ -386,26 +391,26 @@ public class Player extends exchange.sim.Player {
     	// We look at the currentIndex pair (Sock A <-> B) and currentIndex + 1 pair (Sock C <-> D)
     	int nextIndex = (currentIndex + 1) % pendingPairs.size();
     	if (timesPairOffered == 0) {
-    		return new Pair(pendingPairs.get(currentIndex).first, pendingPairs.get(nextIndex).second);
+    		return new Pair(pendingPairsList.get(currentIndex).first, pendingPairsList.get(nextIndex).second);
     	} else if (timesPairOffered == 1) {
     		// even round
             return getPairToOfferEvenRound();
     	} else if (timesPairOffered == 2) {
-    		return new Pair(pendingPairs.get(currentIndex).second, pendingPairs.get(nextIndex).first);
+    		return new Pair(pendingPairsList.get(currentIndex).second, pendingPairsList.get(nextIndex).first);
     	} else if (timesPairOffered == 3) {
     		// even round
             return getPairToOfferEvenRound();
     	} else {
     		System.out.println("Error! timesPairOffered " + timesPairOffered + " is not valid!");
-    		return new Pair(pendingPairs.get(currentIndex).first, pendingPairs.get(nextIndex).first);
+    		return new Pair(pendingPairsList.get(currentIndex).first, pendingPairsList.get(nextIndex).first);
     	}
     }
 
     private Pair getPairToOfferEvenRound() {
         // In even round, we use E1 and E2 to find the best embarassment
         // and offer the sock that may solicit those transations.
-        Sock first = this.pendingPairs.get(0).first;
-        Sock second = this.pendingPairs.get(0).second;
+        Sock first = this.pendingPairs.peek().first;
+        Sock second = this.pendingPairs.peek().second;
 
         double minValSoFar = getTotalEmbarrassment(this.socks);
         double secondMinValSoFar = getTotalEmbarrassment(this.socks);
