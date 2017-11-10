@@ -758,10 +758,27 @@ public class Player extends exchange.sim.Player {
         socks.remove(oldSock);
         socks.add(newSock);
             
-        if(this.socks.size() > LARGE_SOCK_THRESHOLD)    {    
+        if(this.socks.size() > LARGE_SOCK_THRESHOLD) {    
             // Change priority queue
             // 
             // Update distanceWorstSettlePair
+            Pair oldP = null;
+            for (Pair p: pendingPairs) {
+                if (p.first.equals(oldSock) || p.second.equals(oldSock)) {
+                    oldP = p;
+                    break;
+                }
+            }
+            if (oldP != null) {
+                pendingPairs.remove(oldP);
+            }
+            
+            if (oldP.first.equals(oldSock)) {
+                oldP.first = newSock;
+            } else if (oldP.second.equals(oldSock)) {
+                oldP.second = newSock;
+            }
+            pendingPairs.add(oldP);
         }
         else    {
             E1.clear();
